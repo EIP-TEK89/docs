@@ -92,7 +92,7 @@ const config: Config = {
         { to: "/blog", label: "Blog", position: "left" },
         // GitHub
         {
-          href: "https://github.com/triosigno",
+          href: "https://github.com/EIP-TEK89/trio-signo-fullstack",
           label: "GitHub",
           position: "right",
         },

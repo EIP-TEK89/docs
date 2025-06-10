@@ -1,0 +1,584 @@
+---
+sidebar_position: 2
+title: FAQ Frontend
+description: Questions fréquemment posées sur le frontend de l'application TrioSigno.
+---
+
+# FAQ Frontend
+
+Voici les réponses aux questions fréquemment posées concernant le frontend de TrioSigno.
+
+## Architecture et Technologies
+
+### Quelles technologies sont utilisées pour le frontend de TrioSigno ?
+
+Le frontend de TrioSigno est construit avec les technologies suivantes :
+
+- **React** et **Next.js** comme framework principal
+- **TypeScript** pour le typage statique
+- **Tailwind CSS** et **CSS Modules** pour le styling
+- **React Context API** et **React Query** pour la gestion d'état
+- **Framer Motion** pour les animations
+- **TensorFlow.js** pour l'exécution des modèles d'IA côté client
+- **Jest** et **React Testing Library** pour les tests unitaires
+- **Playwright** pour les tests end-to-end
+
+### Comment est organisée l'architecture frontend ?
+
+L'architecture frontend suit une structure modulaire :
+
+- **Pages** : Composants de page correspondant aux routes de l'application
+- **Components** : Composants UI réutilisables organisés par domaine et fonctionnalité
+- **Hooks** : Hooks personnalisés pour la logique réutilisable
+- **Services** : Services pour les appels API et la logique métier
+- **Utils** : Fonctions utilitaires
+- **Types** : Définitions de types TypeScript
+- **Styles** : Styles globaux et thèmes
+- **Constants** : Valeurs constantes utilisées dans l'application
+- **Context** : Providers React Context pour la gestion d'état globale
+
+### Comment est géré l'état dans l'application ?
+
+L'état dans TrioSigno est géré à plusieurs niveaux :
+
+1. **État local** : Pour les composants individuels, nous utilisons `useState` et `useReducer`
+2. **État global** : Pour l'état partagé entre plusieurs composants, nous utilisons React Context API
+3. **État serveur** : Pour les données provenant du backend, nous utilisons React Query qui gère le cache, les requêtes et les mises à jour
+
+Nous suivons une approche de "state colocation" où l'état est maintenu aussi près que possible de l'endroit où il est utilisé.
+
+## Développement
+
+### Comment configurer l'environnement de développement frontend ?
+
+Pour configurer l'environnement de développement frontend :
+
+1. Clonez le dépôt Git :
+
+   ```bash
+   git clone https://github.com/triosigno/triosigno.git
+   cd triosigno/client
+   ```
+
+2. Installez les dépendances :
+
+   ```bash
+   npm install
+   ```
+
+3. Configurez les variables d'environnement :
+
+   - Copiez le fichier `.env.example` vers `.env.local`
+   - Modifiez les valeurs selon votre configuration
+
+4. Lancez le serveur de développement :
+   ```bash
+   npm run dev
+   ```
+
+L'application sera disponible à l'adresse http://localhost:3000.
+
+### Comment ajouter un nouveau composant ?
+
+Pour ajouter un nouveau composant :
+
+1. Créez un nouveau dossier dans `components/` avec le nom du composant (utilisez PascalCase)
+2. Créez les fichiers suivants dans ce dossier :
+   - `index.tsx` : Le composant principal
+   - `[ComponentName].module.css` : Styles spécifiques au composant (si nécessaire)
+   - `[ComponentName].test.tsx` : Tests unitaires
+   - `[ComponentName].stories.tsx` : Documentation Storybook (si applicable)
+
+Exemple de structure pour un composant `Button` :
+
+```
+components/
+  Button/
+    index.tsx
+    Button.module.css
+    Button.test.tsx
+    Button.stories.tsx
+```
+
+### Comment ajouter une nouvelle page ?
+
+Pour ajouter une nouvelle page dans Next.js :
+
+1. Créez un nouveau fichier dans le dossier `pages/` avec le chemin correspondant à l'URL souhaitée
+2. Importez les composants nécessaires et créez le composant de page
+3. Exportez le composant en tant qu'export par défaut
+
+Exemple pour une page de profil utilisateur (`pages/users/profile.tsx`) :
+
+```tsx
+import { GetServerSideProps } from "next";
+import { useUser } from "@/hooks/useUser";
+import { UserProfile } from "@/components/UserProfile";
+import { ProtectedLayout } from "@/components/Layout/ProtectedLayout";
+
+export default function ProfilePage() {
+  const { user, isLoading } = useUser();
+
+  if (isLoading) {
+    return <div>Chargement...</div>;
+  }
+
+  return (
+    <ProtectedLayout>
+      <h1>Profil Utilisateur</h1>
+      {user && <UserProfile user={user} />}
+    </ProtectedLayout>
+  );
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  // Logique côté serveur si nécessaire
+  return {
+    props: {}, // Ces props seront passées au composant page
+  };
+};
+```
+
+### Comment gérer les traductions et l'internationalisation ?
+
+TrioSigno utilise [next-i18next](https://github.com/isaachinman/next-i18next) pour gérer les traductions et l'internationalisation. Voici comment l'utiliser :
+
+1. Les fichiers de traduction sont stockés dans le dossier `public/locales/[lang]/[namespace].json`
+2. Utilisez le hook `useTranslation` pour accéder aux traductions dans les composants :
+
+```tsx
+import { useTranslation } from "next-i18next";
+
+function MyComponent() {
+  const { t } = useTranslation("common");
+
+  return <h1>{t("welcome")}</h1>;
+}
+```
+
+3. Pour ajouter une nouvelle langue :
+   - Créez un nouveau dossier pour la langue dans `public/locales/`
+   - Copiez les fichiers JSON de traduction d'une langue existante
+   - Traduisez les valeurs dans les fichiers JSON
+   - Ajoutez la langue à la configuration dans `next-i18next.config.js`
+
+## Tests et Qualité de Code
+
+### Comment exécuter les tests frontend ?
+
+Pour exécuter les tests frontend :
+
+1. Tests unitaires avec Jest :
+
+   ```bash
+   npm test
+   ```
+
+2. Tests unitaires en mode watch (pour le développement) :
+
+   ```bash
+   npm run test:watch
+   ```
+
+3. Tests end-to-end avec Playwright :
+
+   ```bash
+   npm run test:e2e
+   ```
+
+4. Vérification de la couverture de code :
+   ```bash
+   npm run test:coverage
+   ```
+
+### Comment déboguer le frontend ?
+
+Pour déboguer le frontend de TrioSigno :
+
+1. **Utiliser les outils de développement du navigateur** :
+
+   - Ouvrez les DevTools de votre navigateur (F12 ou Ctrl+Shift+I)
+   - Utilisez l'onglet Console pour voir les erreurs et les logs
+   - Utilisez l'onglet Network pour inspecter les requêtes réseau
+   - Utilisez l'onglet Elements pour inspecter le DOM
+
+2. **Déboguer avec les points d'arrêt** :
+
+   - Ajoutez `debugger;` dans votre code JavaScript/TypeScript
+   - Utilisez les points d'arrêt des DevTools dans l'onglet Sources
+   - Utilisez l'extension React DevTools pour inspecter les composants React
+
+3. **Utiliser les logs** :
+
+   - Utilisez `console.log()`, `console.warn()` et `console.error()` pour afficher des informations dans la console
+   - Pour la gestion d'état, ajoutez des logs dans les reducers et les effets
+
+4. **Mode développement** :
+   - Assurez-vous que l'application est en mode développement pour des messages d'erreur plus détaillés
+
+### Comment suivre les bonnes pratiques de développement frontend ?
+
+Pour suivre les bonnes pratiques dans le développement frontend de TrioSigno :
+
+1. **Qualité du code** :
+
+   - Suivez les règles ESLint et Prettier configurées dans le projet
+   - Exécutez `npm run lint` et `npm run format` avant de committer
+   - Visez une couverture de tests d'au moins 80%
+
+2. **Performance** :
+
+   - Utilisez React.memo pour les composants qui se rendent fréquemment
+   - Optimisez les dépendances des hooks useEffect et useCallback
+   - Utilisez l'analyse de bundle avec `npm run analyze` pour identifier les gros modules
+
+3. **Accessibilité** :
+
+   - Utilisez des éléments sémantiques HTML appropriés
+   - Assurez-vous que tous les éléments interactifs sont accessibles au clavier
+   - Fournissez des alternatives textuelles pour les images et contenus visuels
+   - Testez avec les outils d'accessibilité comme axe
+
+4. **Revue de code** :
+   - Demandez des revues de code pour toutes les pull requests
+   - Utilisez la fonctionnalité de commentaires de GitHub pour discuter des changements spécifiques
+   - Vérifiez que les tests CI passent avant de fusionner
+
+## Fonctionnalités Spécifiques
+
+### Comment fonctionne l'intégration avec la caméra pour la reconnaissance de signes ?
+
+L'intégration avec la caméra pour la reconnaissance de signes fonctionne comme suit :
+
+1. **Accès à la caméra** : Nous utilisons l'API `MediaDevices.getUserMedia()` pour accéder à la caméra de l'utilisateur
+2. **Capture de flux vidéo** : Le flux vidéo est capturé et affiché dans un élément `<video>`
+3. **Traitement d'image** : Les images du flux vidéo sont extraites à intervalles réguliers (généralement 30fps)
+4. **Détection de points clés** : TensorFlow.js est utilisé avec le modèle MediaPipe Hands pour détecter les points clés des mains
+5. **Classification des signes** : Un second modèle TensorFlow.js classifie les positions des mains pour identifier les signes
+6. **Retour à l'utilisateur** : Le résultat de la classification est affiché à l'utilisateur avec un feedback visuel
+
+```tsx
+// Exemple simplifié d'intégration de la caméra
+import { useRef, useEffect, useState } from "react";
+import * as tf from "@tensorflow/tfjs";
+import * as handpose from "@tensorflow-models/handpose";
+
+function SignRecognition() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [prediction, setPrediction] = useState<string>("");
+
+  useEffect(() => {
+    let handposeModel: handpose.HandPose;
+    let signModel: tf.LayersModel;
+
+    async function setupCamera() {
+      if (!videoRef.current) return;
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480 },
+      });
+
+      videoRef.current.srcObject = stream;
+      return new Promise<void>((resolve) => {
+        videoRef.current!.onloadedmetadata = () => {
+          videoRef.current!.play();
+          resolve();
+        };
+      });
+    }
+
+    async function loadModels() {
+      handposeModel = await handpose.load();
+      signModel = await tf.loadLayersModel(
+        "/models/sign_classification/model.json"
+      );
+    }
+
+    async function detectHands() {
+      if (!videoRef.current || !handposeModel || !signModel) return;
+
+      const hands = await handposeModel.estimateHands(videoRef.current);
+
+      if (hands.length > 0) {
+        // Préparer les données pour la classification
+        const landmarks = hands[0].landmarks.flat();
+        const tensor = tf.tensor([landmarks]);
+
+        // Classifier le signe
+        const prediction = await signModel.predict(tensor);
+        const signIndex = tf.argMax(prediction as tf.Tensor, 1).dataSync()[0];
+
+        // Convertir l'index en nom de signe (exemple simplifié)
+        const signNames = ["bonjour", "merci", "oui", "non"];
+        setPrediction(signNames[signIndex]);
+
+        tensor.dispose();
+      }
+
+      // Continuer la détection
+      requestAnimationFrame(detectHands);
+    }
+
+    (async function init() {
+      await setupCamera();
+      await loadModels();
+      detectHands();
+    })();
+
+    return () => {
+      // Nettoyer
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  return (
+    <div>
+      <video
+        ref={videoRef}
+        style={{ width: 640, height: 480, transform: "scaleX(-1)" }}
+      />
+      <div>Signe détecté : {prediction || "Aucun"}</div>
+    </div>
+  );
+}
+```
+
+### Comment fonctionne le système de gamification ?
+
+Le système de gamification de TrioSigno est implémenté comme suit :
+
+1. **Points d'expérience (XP)** : Les utilisateurs gagnent des XP en complétant des leçons, des exercices et en pratiquant régulièrement
+2. **Niveaux** : Les utilisateurs montent de niveau en accumulant des XP, avec des paliers progressifs
+3. **Badges** : Des badges sont débloqués pour des accomplissements spécifiques (compléter une série de leçons, pratiquer plusieurs jours consécutifs, etc.)
+4. **Tableaux de classement** : Les utilisateurs peuvent se comparer à d'autres apprenants
+5. **Défis quotidiens** : Des défis sont proposés chaque jour pour encourager la pratique régulière
+
+Côté frontend, nous utilisons :
+
+- Des animations pour célébrer les réussites
+- Des notifications pour informer des badges débloqués et niveaux atteints
+- Des visualisations de progression pour motiver les utilisateurs
+- Des rappels personnalisés basés sur les habitudes d'apprentissage
+
+### Comment gérer le mode hors ligne ?
+
+Le mode hors ligne dans TrioSigno est géré grâce à plusieurs technologies :
+
+1. **Service Workers** : Nous utilisons les service workers pour mettre en cache les ressources statiques et certaines données dynamiques
+2. **IndexedDB** : Les données de l'utilisateur et du contenu sont stockées localement avec IndexedDB
+3. **Synchronisation en arrière-plan** : Lorsque la connexion est rétablie, les données sont synchronisées avec le serveur
+
+```tsx
+// Exemple de hook pour détecter l'état de la connexion
+import { useState, useEffect } from "react";
+
+export function useOnlineStatus() {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    function handleOnline() {
+      setIsOnline(true);
+    }
+
+    function handleOffline() {
+      setIsOnline(false);
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}
+```
+
+Pour utiliser les fonctionnalités hors ligne :
+
+1. Les leçons déjà consultées sont automatiquement mises en cache
+2. Le dictionnaire de signes peut être téléchargé pour un accès hors ligne
+3. Les progrès réalisés hors ligne sont enregistrés localement puis synchronisés
+4. Une notification informe l'utilisateur lorsqu'il passe en mode hors ligne
+
+## Performances et Optimisation
+
+### Comment optimiser les performances du frontend ?
+
+Pour optimiser les performances du frontend de TrioSigno, nous utilisons plusieurs techniques :
+
+1. **Chargement différé (lazy loading)** :
+
+   - Les composants non critiques sont chargés à la demande avec `React.lazy` et `Suspense`
+   - Les images utilisent le chargement paresseux avec l'attribut `loading="lazy"`
+   - Les modèles d'IA sont chargés uniquement lorsqu'ils sont nécessaires
+
+2. **Optimisation des images** :
+
+   - Utilisation du format WebP avec fallback pour les navigateurs plus anciens
+   - Redimensionnement des images selon les besoins de l'affichage
+   - Utilisation du composant `next/image` pour l'optimisation automatique
+
+3. **Mise en cache** :
+
+   - Mise en cache des requêtes API avec React Query
+   - Utilisation des headers de cache HTTP appropriés
+   - Stratégies de cache optimisées dans les service workers
+
+4. **Pré-chargement (preloading)** :
+
+   - Pré-chargement des ressources critiques
+   - Pré-chargement des données de la page suivante probable
+
+5. **Optimisation du rendu** :
+   - Utilisation de `React.memo` pour les composants coûteux
+   - Virtualisation des listes longues avec `react-window`
+   - Optimisation des hooks avec useMemo et useCallback
+
+### Comment est gérée l'accessibilité dans TrioSigno ?
+
+L'accessibilité dans TrioSigno est prise en compte à plusieurs niveaux :
+
+1. **Structure sémantique** :
+
+   - Utilisation appropriée des éléments HTML (`<nav>`, `<main>`, `<section>`, etc.)
+   - Structure de titres logique et hiérarchique
+   - Points de repère ARIA pour la navigation
+
+2. **Clavier et focus** :
+
+   - Navigation complète au clavier
+   - Indication visuelle claire du focus
+   - Ordres de tabulation logiques
+   - Raccourcis clavier pour les actions fréquentes
+
+3. **Contenu non textuel** :
+
+   - Attributs `alt` descriptifs pour les images
+   - Sous-titres pour les vidéos
+   - Transcriptions pour le contenu audio
+   - Descriptions des signes en texte
+
+4. **Contraste et lisibilité** :
+
+   - Respect des ratios de contraste WCAG 2.1 AA
+   - Option de thème à contraste élevé
+   - Taille de texte ajustable
+   - Pas d'information transmise uniquement par la couleur
+
+5. **Compatibilité avec les technologies d'assistance** :
+   - Attributs ARIA appropriés
+   - Tests avec lecteurs d'écran (NVDA, JAWS, VoiceOver)
+   - Support des gestes d'accessibilité sur mobile
+
+Nous effectuons des audits d'accessibilité réguliers et incluons des personnes en situation de handicap dans nos tests utilisateurs.
+
+### Comment le frontend communique-t-il avec le backend ?
+
+La communication entre le frontend et le backend de TrioSigno se fait principalement via une API REST, avec les caractéristiques suivantes :
+
+1. **Client HTTP** : Nous utilisons Axios comme client HTTP, configuré avec des intercepteurs pour la gestion des erreurs et des tokens
+
+2. **Services API** : Les appels API sont organisés dans des services par domaine fonctionnel :
+
+   ```tsx
+   // services/api/lessonService.ts
+   import axios from "../axios";
+   import { Lesson, LessonProgress } from "@/types";
+
+   export const lessonService = {
+     async getAllLessons() {
+       const response = await axios.get<Lesson[]>("/lessons");
+       return response.data;
+     },
+
+     async getLessonById(id: string) {
+       const response = await axios.get<Lesson>(`/lessons/${id}`);
+       return response.data;
+     },
+
+     async updateProgress(lessonId: string, progress: LessonProgress) {
+       const response = await axios.post<{ success: boolean }>(
+         `/lessons/${lessonId}/progress`,
+         progress
+       );
+       return response.data;
+     },
+   };
+   ```
+
+3. **Gestion d'état** : React Query est utilisé pour gérer l'état des données du serveur :
+
+   ```tsx
+   import { useQuery, useMutation, useQueryClient } from "react-query";
+   import { lessonService } from "@/services/api/lessonService";
+
+   // Hook pour charger une leçon
+   export function useLesson(id: string) {
+     return useQuery(["lesson", id], () => lessonService.getLessonById(id));
+   }
+
+   // Hook pour mettre à jour la progression
+   export function useUpdateProgress() {
+     const queryClient = useQueryClient();
+
+     return useMutation(
+       ({ lessonId, progress }) =>
+         lessonService.updateProgress(lessonId, progress),
+       {
+         onSuccess: (_, { lessonId }) => {
+           // Invalider et recharger les données après mise à jour
+           queryClient.invalidateQueries(["lesson", lessonId]);
+           queryClient.invalidateQueries("userProgress");
+         },
+       }
+     );
+   }
+   ```
+
+4. **Authentification** : Les requêtes authentifiées incluent un token JWT dans l'en-tête Authorization :
+
+   ```tsx
+   // services/axios.ts
+   import axios from "axios";
+   import { getToken } from "@/utils/auth";
+
+   const instance = axios.create({
+     baseURL: process.env.NEXT_PUBLIC_API_URL,
+     timeout: 10000,
+     headers: {
+       "Content-Type": "application/json",
+     },
+   });
+
+   // Ajouter le token à chaque requête
+   instance.interceptors.request.use((config) => {
+     const token = getToken();
+     if (token) {
+       config.headers.Authorization = `Bearer ${token}`;
+     }
+     return config;
+   });
+
+   // Gérer les erreurs globalement
+   instance.interceptors.response.use(
+     (response) => response,
+     (error) => {
+       // Gérer les erreurs 401 (non autorisé)
+       if (error.response && error.response.status === 401) {
+         // Rediriger vers la page de connexion ou rafraîchir le token
+       }
+       return Promise.reject(error);
+     }
+   );
+
+   export default instance;
+   ```
+
+5. **WebSockets** : Pour les fonctionnalités en temps réel (comme les tableaux de classement ou les sessions d'apprentissage en groupe), nous utilisons Socket.io.

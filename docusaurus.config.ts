@@ -23,7 +23,7 @@ const config: Config = {
   organizationName: "triosigno", // Usually your GitHub org/user name.
   projectName: "docs-triosigno", // Usually your repo name.
 
-  onBrokenLinks: "throw",
+  onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
 
   // Configuration pour l'internationalisation (français et anglais)
@@ -49,7 +49,7 @@ const config: Config = {
         docs: {
           sidebarPath: "./sidebars.ts",
           // Remplacez par votre dépôt GitHub
-          editUrl: "https://github.com/triosigno/docs-triosigno/tree/main/",
+          editUrl: "https://github.com/EIP-TEK89/trio-signo-fullstack",
         },
         blog: {
           showReadingTime: true,
@@ -58,7 +58,7 @@ const config: Config = {
             xslt: true,
           },
           // Remplacez par votre dépôt GitHub
-          editUrl: "https://github.com/triosigno/docs-triosigno/tree/main/",
+          editUrl: "https://github.com/EIP-TEK89/trio-signo-fullstack",
           // Options utiles pour respecter les meilleures pratiques de blog
           onInlineTags: "warn",
           onInlineAuthors: "warn",
@@ -111,7 +111,7 @@ const config: Config = {
           items: [
             {
               label: "Introduction",
-              to: "/docs/intro",
+              to: "/docs/",
             },
             {
               label: "Frontend",

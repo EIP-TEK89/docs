@@ -23,10 +23,7 @@ const sidebars: SidebarsConfig = {
         title: "Démarrage Rapide",
         description: "Apprenez à installer et configurer TrioSigno rapidement",
       },
-      items: [
-        "getting-started/installation",
-        "getting-started/configuration",
-      ],
+      items: ["getting-started/installation", "getting-started/configuration"],
     },
     {
       type: "category",
@@ -50,11 +47,7 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "frontend/overview",
       },
-      items: [
-        "frontend/overview",
-        "frontend/architecture",
-        "frontend/testing",
-      ],
+      items: ["frontend/overview", "frontend/architecture", "frontend/testing"],
     },
     {
       type: "category",
@@ -63,11 +56,7 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "backend/overview",
       },
-      items: [
-        "backend/overview",
-        "backend/api-endpoints",
-        "backend/database",
-      ],
+      items: ["backend/overview", "backend/api-endpoints", "backend/database"],
     },
     {
       type: "category",
@@ -76,9 +65,7 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "ia/overview",
       },
-      items: [
-        "ia/overview",
-      ],
+      items: ["ia/overview"],
     },
     {
       type: "category",
@@ -102,9 +89,7 @@ const sidebars: SidebarsConfig = {
         title: "Contribution",
         description: "Comment contribuer au projet TrioSigno",
       },
-      items: [
-        "contribution/code-guidelines",
-      ],
+      items: ["contribution/code-guidelines"],
     },
   ],
 };

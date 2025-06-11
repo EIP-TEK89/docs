@@ -1,19 +1,21 @@
 ---
 sidebar_position: 4
 title: Base de Données
-description: Documentation de la base de données de TrioSigno, incluant le schéma Prisma et les relations entre les modèles.
+description: Documentation de la base de données de Trio Signo, incluant le schéma Prisma et les relations entre les modèles.
 ---
 
 # Base de Données
 
-TrioSigno utilise [Prisma](https://www.prisma.io/) comme ORM (Object-Relational Mapping) pour gérer les interactions avec la base de données. Prisma offre une interface type-safe pour interagir avec la base de données, ce qui améliore la sécurité et la productivité pendant le développement.
+Trio Signo utilise [PostgreSQL](https://www.postgresql.org/) comme système de gestion de base de données relationnelle et [Prisma](https://www.prisma.io/) comme ORM (Object-Relational Mapping) pour gérer les interactions avec la base de données. Cette combinaison offre une interface type-safe pour interagir avec la base de données, améliorant ainsi la sécurité et la productivité pendant le développement.
 
 ## Schéma Prisma
 
-Le schéma Prisma définit les modèles de données, les relations entre eux, et sert de source unique de vérité pour la structure de la base de données.
+Le schéma Prisma définit les modèles de données et les relations entre eux. Il sert de source unique de vérité pour la structure de la base de données de l'application Trio Signo.
+
+Voici un exemple simplifié du schéma Prisma utilisé dans l'application:
 
 ```prisma
-// Ce fichier définit le schéma de la base de données de TrioSigno
+// Schéma Prisma simplifié pour Trio Signo
 
 generator client {
   provider = "prisma-client-js"
@@ -24,231 +26,156 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modèle Utilisateur
+// Modèle utilisateur
 model User {
-  id              String           @id @default(uuid())
-  email           String           @unique
-  username        String           @unique
-  password        String
-  firstName       String?
-  lastName        String?
-  role            UserRole         @default(STUDENT)
-  profilePicture  String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  isActive        Boolean          @default(true)
-  progress        Progress[]
-  sessions        LearningSession[]
-  achievements    UserAchievement[]
-  userPreferences UserPreference?
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  password      String
+  profilePicture String?
+  level         Int       @default(1)
+  xp            Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  progress      Progress?
+  badges        Badge[]
+  dailyStreak   Int       @default(0)
+  lastActive    DateTime  @default(now())
 }
 
-// Rôles disponibles pour les utilisateurs
-enum UserRole {
-  ADMIN
-  TEACHER
-  STUDENT
-}
-
-// Préférences utilisateur
-model UserPreference {
-  id             String      @id @default(uuid())
-  userId         String      @unique
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  language       String      @default("fr")
-  notifications  Boolean     @default(true)
-  darkMode       Boolean     @default(false)
-  learningGoal   Int         @default(10) // en minutes par jour
-  updatedAt      DateTime    @updatedAt
-}
-
-// Modèle pour les signes à apprendre
-model Sign {
-  id              String          @id @default(uuid())
-  name            String          @unique
-  description     String
-  videoUrl        String
-  imageUrl        String?
-  difficulty      DifficultyLevel
-  category        SignCategory    @relation(fields: [categoryId], references: [id])
-  categoryId      String
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  lessonSigns     LessonSign[]
-  progress        Progress[]
-}
-
-// Niveaux de difficulté disponibles
-enum DifficultyLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-}
-
-// Catégories de signes
-model SignCategory {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  description String
-  imageUrl    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  signs       Sign[]
-}
-
-// Modèle pour les leçons
+// Modèle de leçon
 model Lesson {
-  id          String        @id @default(uuid())
+  id          String     @id @default(uuid())
   title       String
   description String
-  order       Int
-  module      Module        @relation(fields: [moduleId], references: [id])
-  moduleId    String
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  lessonSigns LessonSign[]
-  sessions    LearningSession[]
+  difficulty  String
+  category    String
+  duration    Int
+  exercises   Exercise[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
 
-// Relation entre leçons et signes
-model LessonSign {
-  id        String    @id @default(uuid())
-  lesson    Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+// Modèle d'exercice
+model Exercise {
+  id        String   @id @default(uuid())
+  type      String
+  content   Json
+  points    Int
   lessonId  String
-  sign      Sign      @relation(fields: [signId], references: [id], onDelete: Cascade)
-  signId    String
-  order     Int
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@unique([lessonId, signId])
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-// Modèle pour les modules d'apprentissage
-model Module {
-  id          String    @id @default(uuid())
-  title       String
-  description String
-  order       Int
-  imageUrl    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  lessons     Lesson[]
-}
-
-// Suivi de la progression des utilisateurs
+// Modèle de progression
 model Progress {
-  id               String         @id @default(uuid())
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId           String
-  sign             Sign           @relation(fields: [signId], references: [id], onDelete: Cascade)
-  signId           String
-  masteryLevel     Int            @default(0) // 0-100
-  lastPracticed    DateTime?
-  correctAttempts  Int            @default(0)
-  totalAttempts    Int            @default(0)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
-  @@unique([userId, signId])
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  lessonsCompleted  String[]
+  exercisesCompleted String[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
-// Sessions d'apprentissage
-model LearningSession {
-  id          String    @id @default(uuid())
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  lesson      Lesson    @relation(fields: [lessonId], references: [id])
-  lessonId    String
-  startTime   DateTime  @default(now())
-  endTime     DateTime?
-  score       Int?
-  xpEarned    Int?
-  completed   Boolean   @default(false)
-}
-
-// Réalisations/Badges
-model Achievement {
-  id          String             @id @default(uuid())
-  name        String             @unique
+// Modèle de badge
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
   description String
   imageUrl    String
-  xpReward    Int
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  users       UserAchievement[]
+  users       User[]
+  createdAt   DateTime @default(now())
 }
 
-// Relation entre utilisateurs et réalisations
-model UserAchievement {
-  id            String      @id @default(uuid())
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
-  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
-  achievementId String
-  achievedAt    DateTime    @default(now())
-
-  @@unique([userId, achievementId])
+// Autres modèles potentiels pour Trio Signo
+model Dictionary {
+  id          String   @id @default(uuid())
+  word        String   @unique
+  definition  String
+  videoUrl    String
+  imageUrl    String?
+  category    String
+  difficulty  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 ```
 
-## Modèles de Données
+## Principaux Modèles de Données
 
 ### Utilisateur (User)
 
-Le modèle `User` stocke les informations des utilisateurs du système, avec différents rôles (étudiant, enseignant, administrateur). Chaque utilisateur peut avoir :
+Le modèle `User` stocke les informations des utilisateurs de l'application:
 
-- Des préférences personnalisées
-- Un historique de progression
-- Des sessions d'apprentissage
-- Des réalisations (achievements)
+- Identifiants de connexion (email, username, password)
+- Informations de profil (profilePicture)
+- Données de progression (level, xp, dailyStreak)
+- Horodatages (createdAt, updatedAt, lastActive)
+- Relations avec d'autres modèles (progress, badges)
 
-### Signes (Sign)
+### Leçons (Lesson)
 
-Le modèle `Sign` représente les signes de la langue des signes française (LSF) que les utilisateurs peuvent apprendre. Chaque signe appartient à une catégorie et possède un niveau de difficulté.
+Le modèle `Lesson` représente les leçons disponibles dans l'application:
 
-### Leçons et Modules
+- Informations de base (title, description)
+- Métadonnées (difficulty, category, duration)
+- Relation avec les exercices (exercises)
+- Horodatages (createdAt, updatedAt)
 
-Les modèles `Lesson` et `Module` organisent le contenu d'apprentissage :
+### Exercices (Exercise)
 
-- Les modules sont des ensembles thématiques de leçons
-- Les leçons contiennent plusieurs signes à apprendre
-- L'association entre leçons et signes est gérée par le modèle `LessonSign`
+Le modèle `Exercise` définit les exercices associés aux leçons:
 
-### Progression
+- Type d'exercice (type)
+- Contenu de l'exercice en format JSON (content)
+- Points attribués (points)
+- Relation avec la leçon parente (lessonId, lesson)
+- Horodatages (createdAt, updatedAt)
 
-Le modèle `Progress` suit la progression de chaque utilisateur pour chaque signe, avec des métriques comme :
+### Progression (Progress)
 
-- Le niveau de maîtrise
-- Le nombre de tentatives correctes et totales
-- La date de dernière pratique
+Le modèle `Progress` suit la progression de chaque utilisateur:
 
-### Système de Gamification
+- Relation avec l'utilisateur (userId, user)
+- Leçons complétées (lessonsCompleted)
+- Exercices complétés (exercisesCompleted)
+- Horodatages (createdAt, updatedAt)
 
-Plusieurs modèles supportent le système de gamification :
+### Badges (Badge)
 
-- `LearningSession` pour suivre les sessions d'apprentissage
-- `Achievement` pour définir les badges et récompenses
-- `UserAchievement` pour attribuer des réalisations aux utilisateurs
+Le modèle `Badge` représente les récompenses débloquées par les utilisateurs:
+
+- Informations du badge (name, description, imageUrl)
+- Relation avec les utilisateurs (users)
+- Date de création (createdAt)
+
+### Dictionnaire (Dictionary)
+
+Le modèle `Dictionary` stocke les signes disponibles dans le dictionnaire:
+
+- Mot ou signe (word)
+- Définition et explication (definition)
+- Médias associés (videoUrl, imageUrl)
+- Catégorisation (category, difficulty)
+- Horodatages (createdAt, updatedAt)
 
 ## Relations Entre les Modèles
 
-Le schéma Prisma définit plusieurs types de relations :
-
-### Relations One-to-Many
-
-- Un utilisateur peut avoir plusieurs progressions, sessions et réalisations
-- Une catégorie peut contenir plusieurs signes
-- Un module peut contenir plusieurs leçons
+Le schéma établit plusieurs types de relations entre les modèles:
 
 ### Relations One-to-One
 
-- Un utilisateur a un seul ensemble de préférences (`UserPreference`)
+- Un utilisateur a une seule progression (`User` → `Progress`)
+
+### Relations One-to-Many
+
+- Une leçon contient plusieurs exercices (`Lesson` → `Exercise[]`)
 
 ### Relations Many-to-Many
 
-- Les signes et les leçons ont une relation many-to-many via `LessonSign`
-- Les utilisateurs et les réalisations ont une relation many-to-many via `UserAchievement`
+- Les utilisateurs peuvent avoir plusieurs badges (`User` ↔ `Badge[]`)
 
 ## Utilisation de Prisma dans l'Application
 
@@ -260,82 +187,55 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 ```
 
-### Exemples de Requêtes
+### Exemples de Requêtes Courantes
 
-#### Récupération d'un utilisateur avec ses préférences
+#### Récupérer un utilisateur avec sa progression
 
 ```typescript
-const userWithPreferences = await prisma.user.findUnique({
+const userWithProgress = await prisma.user.findUnique({
   where: { id: userId },
-  include: { userPreferences: true },
+  include: { progress: true },
 });
 ```
 
-#### Récupération des leçons d'un module avec leurs signes
+#### Récupérer une leçon avec ses exercices
 
 ```typescript
-const moduleWithLessons = await prisma.module.findUnique({
-  where: { id: moduleId },
-  include: {
-    lessons: {
-      include: {
-        lessonSigns: {
-          include: { sign: true },
-          orderBy: { order: "asc" },
-        },
-      },
-      orderBy: { order: "asc" },
-    },
-  },
+const lessonWithExercises = await prisma.lesson.findUnique({
+  where: { id: lessonId },
+  include: { exercises: true },
 });
 ```
 
-#### Mise à jour de la progression d'un utilisateur
+#### Mettre à jour la progression d'un utilisateur
 
 ```typescript
-const updatedProgress = await prisma.progress.upsert({
-  where: {
-    userId_signId: {
-      userId: userId,
-      signId: signId,
-    },
-  },
-  update: {
-    masteryLevel: masteryLevel,
-    lastPracticed: new Date(),
-    correctAttempts: { increment: isCorrect ? 1 : 0 },
-    totalAttempts: { increment: 1 },
-  },
-  create: {
-    userId: userId,
-    signId: signId,
-    masteryLevel: isCorrect ? 10 : 0,
-    lastPracticed: new Date(),
-    correctAttempts: isCorrect ? 1 : 0,
-    totalAttempts: 1,
+const updatedProgress = await prisma.progress.update({
+  where: { userId: userId },
+  data: {
+    lessonsCompleted: { push: lessonId },
+    exercisesCompleted: { push: exerciseId },
   },
 });
 ```
 
 ## Migrations et Gestion du Schéma
 
-Pour gérer l'évolution du schéma de la base de données, Prisma fournit des outils de migration.
+Prisma fournit des outils pour gérer les migrations de base de données:
 
-### Création d'une Migration
+### Créer une migration
 
 ```bash
 npx prisma migrate dev --name nom_de_la_migration
 ```
 
-### Application des Migrations en Production
+### Appliquer les migrations en production
 
 ```bash
 npx prisma migrate deploy
 ```
 
-### Génération du Client Prisma
-
-Après chaque modification du schéma, il faut régénérer le client Prisma :
+### Générer le client Prisma
 
 ```bash
 npx prisma generate
@@ -343,17 +243,17 @@ npx prisma generate
 
 ## Considérations de Performance
 
-Pour optimiser les performances de la base de données :
+Pour garantir de bonnes performances:
 
-1. **Indexation** : Les champs fréquemment utilisés dans les requêtes sont indexés.
-2. **Sélection Précise** : Utiliser la sélection de champs pour ne récupérer que les données nécessaires.
-3. **Pagination** : Implémenter la pagination pour les grandes collections de données.
-4. **Mise en Cache** : Mettre en cache les résultats des requêtes fréquentes.
+1. **Indexation** des champs fréquemment utilisés dans les requêtes
+2. **Sélection spécifique** des champs pour éviter de récupérer des données inutiles
+3. **Pagination** pour les grandes collections de données
+4. **Optimisation des requêtes** avec les outils Prisma
 
 ## Sécurité des Données
 
-Le schéma inclut plusieurs mesures de sécurité :
+Le schéma intègre plusieurs mesures de sécurité:
 
-- Suppression en cascade pour maintenir l'intégrité référentielle
+- Les mots de passe sont stockés sous forme hachée (jamais en clair)
 - Validation des données via les types Prisma
-- Champs pour suivre la création et la mise à jour des enregistrements
+- Horodatages de création et modification pour l'audit

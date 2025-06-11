@@ -698,57 +698,15 @@ export class LoginDto {
    .max(30),
    password: z
    .string()
-   .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-   .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
-   .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre"),
-   firstName: z.string().optional(),
-   lastName: z.string().optional(),
-   });
+   // La section ci-dessus a été remplacée par class-validator et NestJS validation pipes
 
-export const lessonSchema = z.object({
-title: z.string().min(1, "Le titre est requis"),
-description: z.string().min(1, "La description est requise"),
-moduleId: z.string().uuid("ID de module invalide"),
-order: z.number().int().positive(),
-});
-
-// Plus de schémas...
-
-````
-
-2. **Middleware de validation** :
-
-```typescript
-// middleware/validation.ts
-import { z } from "zod";
-import { Request, Response, NextFunction } from "express";
-
-export function validate(schema: z.ZodSchema) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req.body);
-      next();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
-          status: "error",
-          message: "Validation failed",
-          errors: error.errors.map((e) => ({
-            path: e.path.join("."),
-            message: e.message,
-          })),
-        });
-      }
-      next(error);
-    }
-  };
-}
 ```typescript
 // src/main.ts
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
+// src/main.ts
+import { NestFactory } from "@nestjs/core";
+import { ValidationPipe } from "@nestjs/common";
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { AppModule } from "./app.module";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -759,26 +717,26 @@ async function bootstrap() {
       whitelist: true, // Supprime les propriétés non définies dans les DTO
       forbidNonWhitelisted: true, // Rejette les requêtes avec des propriétés non définies
       transform: true, // Transforme automatiquement les données selon les types des DTO
-    }),
+    })
   );
 
   // Configuration de Swagger
   const config = new DocumentBuilder()
-    .setTitle('Trio Signo API')
-    .setDescription('API de l\'application Trio Signo')
-    .setVersion('1.0')
-    .addTag('auth')
-    .addTag('users')
-    .addTag('signs')
+    .setTitle("Trio Signo API")
+    .setDescription("API de l'application Trio Signo")
+    .setVersion("1.0")
+    .addTag("auth")
+    .addTag("users")
+    .addTag("signs")
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup("api/docs", app, document);
 
   await app.listen(3001);
 }
 bootstrap();
-````
+```
 
 3. **Utilisation dans les contrôleurs** :
 

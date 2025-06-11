@@ -1,44 +1,43 @@
 ---
 sidebar_position: 3
 title: FAQ Backend
-description: Questions fréquemment posées sur le backend de l'application TrioSigno.
+description: Questions fréquemment posées sur le backend de l'application Trio Signo.
 ---
 
 # FAQ Backend
 
-Voici les réponses aux questions fréquemment posées concernant le backend de TrioSigno.
+Voici les réponses aux questions fréquemment posées concernant le backend de Trio Signo.
 
 ## Architecture et Technologies
 
-### Quelles technologies sont utilisées pour le backend de TrioSigno ?
+### Quelles technologies sont utilisées pour le backend de Trio Signo ?
 
-Le backend de TrioSigno est construit avec les technologies suivantes :
+Le backend de Trio Signo est construit avec les technologies suivantes :
 
 - **Node.js** comme environnement d'exécution
-- **Express** comme framework web
+- **NestJS** comme framework web
 - **TypeScript** pour le typage statique
 - **Prisma** comme ORM (Object-Relational Mapping)
 - **PostgreSQL** comme base de données principale
-- **Redis** pour le cache et les sessions
 - **JWT** (JSON Web Tokens) pour l'authentification
-- **Socket.io** pour les communications en temps réel
+- **OAuth2** pour l'authentification via Google
 - **Jest** pour les tests unitaires et d'intégration
-- **Supertest** pour les tests API
 - **Docker** pour la conteneurisation
 
 ### Comment est organisée l'architecture backend ?
 
-L'architecture backend suit une approche en couches :
+L'architecture backend suit une structure modulaire propre à NestJS :
 
-1. **Routes** : Définissent les endpoints API et dirigent les requêtes vers les contrôleurs
-2. **Contrôleurs** : Gèrent la logique de traitement des requêtes HTTP
+1. **Modules** : Chaque fonctionnalité majeure est encapsulée dans un module
+2. **Contrôleurs** : Gèrent les endpoints API et le routage
 3. **Services** : Contiennent la logique métier principale
-4. **Repositories** : Gèrent les interactions avec la base de données
-5. **Modèles** : Définissent la structure des données (via Prisma)
-6. **Middleware** : Fonctions intermédiaires pour l'authentification, la validation, etc.
-7. **Utils** : Fonctions utilitaires réutilisables
+4. **DTOs** : Définissent la structure des données d'entrée et de sortie
+5. **Entités** : Représentent les modèles de données
+6. **Pipes** : Valident et transforment les données entrantes
+7. **Guards** : Protègent les routes avec l'authentification et l'autorisation
+8. **Interceptors** : Manipulent les requêtes et les réponses
 
-Cette architecture permet une séparation claire des responsabilités et facilite la maintenance et les tests.
+Cette architecture modulaire permet une séparation claire des responsabilités et facilite la maintenance et les tests.
 
 ### Comment est gérée la base de données ?
 
@@ -54,27 +53,30 @@ Exemple de schéma Prisma pour un modèle `User` et ses relations :
 
 ```prisma
 model User {
-  id              String           @id @default(uuid())
-  email           String           @unique
-  username        String           @unique
-  password        String
-  firstName       String?
-  lastName        String?
-  role            UserRole         @default(STUDENT)
-  profilePicture  String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  isActive        Boolean          @default(true)
-  progress        Progress[]
-  sessions        LearningSession[]
-  achievements    UserAchievement[]
-  userPreferences UserPreference?
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  password      String
+  profilePicture String?
+  level         Int       @default(1)
+  xp            Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  progress      Progress?
+  badges        Badge[]
+  dailyStreak   Int       @default(0)
+  lastActive    DateTime  @default(now())
 }
 
-enum UserRole {
-  ADMIN
-  TEACHER
-  STUDENT
+// Modèle de progression
+model Progress {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id])
+  lessonsCompleted  String[]
+  exercisesCompleted String[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 ```
 
@@ -87,8 +89,8 @@ Pour configurer l'environnement de développement backend :
 1. Clonez le dépôt Git :
 
    ```bash
-   git clone https://github.com/triosigno/triosigno.git
-   cd triosigno/server
+   git clone https://github.com/EIP-TEK89/trio-signo-fullstack.git
+   cd trio-signo-fullstack/trio-signo-server
    ```
 
 2. Installez les dépendances :
@@ -99,8 +101,26 @@ Pour configurer l'environnement de développement backend :
 
 3. Configurez les variables d'environnement :
 
-   - Copiez le fichier `.env.example` vers `.env`
-   - Modifiez les valeurs selon votre configuration
+   ```bash
+   cp .env.example .env
+   # Modifiez les variables dans le fichier .env selon votre configuration
+   ```
+
+4. Exécutez les migrations Prisma :
+
+   ```bash
+   npx prisma migrate dev
+   ```
+
+5. Lancez le serveur de développement :
+   ```bash
+   npm run start:dev
+   ```
+
+Le serveur sera disponible à l'adresse http://localhost:3000 (ou le port configuré dans .env).
+
+- Copiez le fichier `.env.example` vers `.env`
+- Modifiez les valeurs selon votre configuration
 
 4. Configurez la base de données :
 
@@ -129,100 +149,111 @@ Le serveur sera disponible à l'adresse http://localhost:3001 (ou le port config
 
 Pour créer un nouvel endpoint API, suivez ces étapes :
 
-1. **Créez un nouveau fichier de route** dans `routes/` si nécessaire :
+1. **Créez un nouveau module** dans `src/modules/` :
 
 ```typescript
-// routes/signRoutes.ts
-import express from "express";
+// src/modules/signs/signs.module.ts
+import { Module } from "@nestjs/common";
+import { SignsController } from "./signs.controller";
+import { SignsService } from "./signs.service";
+import { PrismaModule } from "../prisma/prisma.module";
+
+@Module({
+  imports: [PrismaModule],
+  controllers: [SignsController],
+  providers: [SignsService],
+  exports: [SignsService],
+})
+export class SignsModule {}
+```
+
+2. **Créez un contrôleur** dans le même module :
+
+```typescript
+// src/modules/signs/signs.controller.ts
 import {
-  getSignById,
-  getAllSigns,
-  createSign,
-  updateSign,
-  deleteSign,
-} from "../controllers/signController";
-import { authenticate, authorize } from "../middleware/auth";
-import { validateSignData } from "../middleware/validation";
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Query,
+  Body,
+  UseGuards,
+} from "@nestjs/common";
+import { SignsService } from "./signs.service";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
+import { Roles } from "../auth/decorators/roles.decorator";
+import { CreateSignDto, UpdateSignDto } from "./dto";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 
-const router = express.Router();
+@ApiTags("signs")
+@Controller("signs")
+export class SignsController {
+  constructor(private readonly signsService: SignsService) {}
 
-router.get("/signs", getAllSigns);
-router.get("/signs/:id", getSignById);
-router.post(
-  "/signs",
-  authenticate,
-  authorize(["ADMIN", "TEACHER"]),
-  validateSignData,
-  createSign
-);
-router.put(
-  "/signs/:id",
-  authenticate,
-  authorize(["ADMIN", "TEACHER"]),
-  validateSignData,
-  updateSign
-);
-router.delete("/signs/:id", authenticate, authorize(["ADMIN"]), deleteSign);
-
-export default router;
-```
-
-2. **Créez un contrôleur** dans `controllers/` :
-
-```typescript
-// controllers/signController.ts
-import { Request, Response, NextFunction } from "express";
-import { SignService } from "../services/signService";
-import { AppError, NotFoundError } from "../utils/errors";
-
-const signService = new SignService();
-
-export async function getAllSigns(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const { category, difficulty, search } = req.query;
-    const signs = await signService.getAllSigns({
-      category: category as string,
-      difficulty: difficulty as string,
-      search: search as string,
+  @Get()
+  @ApiOperation({ summary: "Get all signs" })
+  @ApiResponse({ status: 200, description: "Return all signs." })
+  async getAllSigns(
+    @Query("category") category?: string,
+    @Query("difficulty") difficulty?: string,
+    @Query("search") search?: string
+  ) {
+    return this.signsService.getAllSigns({
+      category,
+      difficulty,
+      search,
     });
-    res.json(signs);
-  } catch (error) {
-    next(error);
+  }
+
+  @Get(":id")
+  @ApiOperation({ summary: "Get a sign by id" })
+  @ApiResponse({ status: 200, description: "Return the sign." })
+  @ApiResponse({ status: 404, description: "Sign not found." })
+  async getSignById(@Param("id") id: string) {
+    return this.signsService.getSignById(id);
+  }
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN", "TEACHER")
+  @ApiOperation({ summary: "Create a new sign" })
+  async createSign(@Body() createSignDto: CreateSignDto) {
+    return this.signsService.createSign(createSignDto);
+  }
+
+  @Put(":id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN", "TEACHER")
+  @ApiOperation({ summary: "Update a sign" })
+  async updateSign(
+    @Param("id") id: string,
+    @Body() updateSignDto: UpdateSignDto
+  ) {
+    return this.signsService.updateSign(id, updateSignDto);
+  }
+
+  @Delete(":id")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("ADMIN")
+  @ApiOperation({ summary: "Delete a sign" })
+  async deleteSign(@Param("id") id: string) {
+    return this.signsService.deleteSign(id);
   }
 }
-
-export async function getSignById(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    const { id } = req.params;
-    const sign = await signService.getSignById(id);
-
-    if (!sign) {
-      return next(new NotFoundError(`Sign with ID ${id} not found`));
-    }
-
-    res.json(sign);
-  } catch (error) {
-    next(error);
-  }
-}
-
-// Autres fonctions de contrôleur : createSign, updateSign, deleteSign...
 ```
 
-3. **Créez un service** dans `services/` :
+3. **Créez un service** dans le même module :
 
 ```typescript
-// services/signService.ts
-import { prisma } from "../config/database";
+// src/modules/signs/signs.service.ts
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "@prisma/client";
+import { CreateSignDto, UpdateSignDto } from "./dto";
 
 interface SignFilter {
   category?: string;
@@ -230,7 +261,10 @@ interface SignFilter {
   search?: string;
 }
 
-export class SignService {
+@Injectable()
+export class SignsService {
+  constructor(private prisma: PrismaService) {}
+
   async getAllSigns(filter: SignFilter = {}) {
     const where: Prisma.SignWhereInput = {};
 
@@ -249,7 +283,7 @@ export class SignService {
       ];
     }
 
-    return prisma.sign.findMany({
+    return this.prisma.sign.findMany({
       where,
       include: {
         category: true,
@@ -261,72 +295,126 @@ export class SignService {
   }
 
   async getSignById(id: string) {
-    return prisma.sign.findUnique({
+    const sign = await this.prisma.sign.findUnique({
       where: { id },
+      include: {
+        category: true,
+      },
+    });
+
+    if (!sign) {
+      throw new NotFoundException(`Sign with ID ${id} not found`);
+    }
+
+    return sign;
+  }
+
+  async createSign(data: CreateSignDto) {
+    return this.prisma.sign.create({
+      data,
       include: {
         category: true,
       },
     });
   }
 
-  // Autres méthodes : createSign, updateSign, deleteSign...
-}
-```
+  async updateSign(id: string, data: UpdateSignDto) {
+    return this.prisma.sign.update({
+      where: { id },
+      data,
+      include: {
+        category: true,
+      },
+    });
+  }
 
-4. **Ajoutez les validations** si nécessaire :
-
-```typescript
-// middleware/validation.ts
-import { z } from "zod";
-import { Request, Response, NextFunction } from "express";
-
-const signSchema = z.object({
-  name: z.string().min(1).max(100),
-  description: z.string().min(1),
-  videoUrl: z.string().url(),
-  imageUrl: z.string().url().optional().nullable(),
-  difficulty: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]),
-  categoryId: z.string().uuid(),
-});
-
-export function validateSignData(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    signSchema.parse(req.body);
-    next();
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        status: "error",
-        message: "Validation failed",
-        errors: error.errors,
-      });
-    }
-    next(error);
+  async deleteSign(id: string) {
+    return this.prisma.sign.delete({
+      where: { id },
+    });
   }
 }
 ```
 
-5. **Enregistrez les routes** dans l'application principale :
+4. **Créez les DTOs** pour la validation des données :
 
 ```typescript
-// app.ts
-import express from "express";
-import signRoutes from "./routes/signRoutes";
+// src/modules/signs/dto/index.ts
+export * from "./create-sign.dto";
+export * from "./update-sign.dto";
 
-const app = express();
+// src/modules/signs/dto/create-sign.dto.ts
+import { IsString, IsUrl, IsEnum, IsUUID, IsOptional } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
-// Middleware...
+export enum SignDifficulty {
+  BEGINNER = "BEGINNER",
+  INTERMEDIATE = "INTERMEDIATE",
+  ADVANCED = "ADVANCED",
+}
 
-// Routes
-app.use("/api", signRoutes);
+export class CreateSignDto {
+  @IsString()
+  @ApiProperty({ description: "The name of the sign" })
+  name: string;
 
-// Gestionnaire d'erreurs...
+  @IsString()
+  @ApiProperty({ description: "Description of the sign" })
+  description: string;
 
-export { app };
+  @IsUrl()
+  @ApiProperty({ description: "URL to the video of the sign" })
+  videoUrl: string;
+
+  @IsUrl()
+  @IsOptional()
+  @ApiProperty({ description: "URL to the image of the sign", required: false })
+  imageUrl?: string | null;
+
+  @IsEnum(SignDifficulty)
+  @ApiProperty({
+    enum: SignDifficulty,
+    description: "Difficulty level of the sign",
+  })
+  difficulty: SignDifficulty;
+
+  @IsUUID()
+  @ApiProperty({ description: "ID of the category this sign belongs to" })
+  categoryId: string;
+}
+
+// src/modules/signs/dto/update-sign.dto.ts
+import { PartialType } from "@nestjs/swagger";
+import { CreateSignDto } from "./create-sign.dto";
+
+export class UpdateSignDto extends PartialType(CreateSignDto) {}
+```
+
+5. **Importez le module** dans l'application principale :
+
+```typescript
+// src/app.module.ts
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { PrismaModule } from "./modules/prisma/prisma.module";
+import { AuthModule } from "./modules/auth/auth.module";
+import { UsersModule } from "./modules/users/users.module";
+import { SignsModule } from "./modules/signs/signs.module";
+// Autres imports de modules...
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    SignsModule,
+    // Autres modules...
+  ],
+})
+export class AppModule {}
 ```
 
 ### Comment gérer l'authentification et l'autorisation ?
@@ -336,49 +424,41 @@ L'authentification et l'autorisation sont gérées comme suit :
 1. **Authentification** : Utilise JWT (JSON Web Tokens) pour vérifier l'identité des utilisateurs
 
 ```typescript
-// middleware/auth.ts
-import jwt from "jsonwebtoken";
-import { Request, Response, NextFunction } from "express";
-import { UnauthorizedError, ForbiddenError } from "../utils/errors";
-import { UserRole } from "@prisma/client";
+// src/modules/auth/guards/jwt-auth.guard.ts
+import { Injectable } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 
-// Interface pour étendre l'objet Request avec l'utilisateur
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        role: UserRole;
-      };
-    }
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}
+
+// src/modules/auth/strategies/jwt.strategy.ts
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../prisma/prisma.service';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: configService.get<string>('JWT_SECRET'),
+    });
   }
-}
 
-export function authenticate(req: Request, res: Response, next: NextFunction) {
-  try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new UnauthorizedError("Authentication required");
-    }
-
-    const token = authHeader.split(" ")[1];
-
-    if (!token) {
-      throw new UnauthorizedError("Authentication token missing");
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: string;
-      role: UserRole;
+  async validate(payload: { sub: string; email: string; role: string }) {
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role,
     };
-
-    req.user = decoded;
-    next();
-  } catch (error) {
-    if (error instanceof jwt.JsonWebTokenError) {
-      next(new UnauthorizedError("Invalid token"));
-    } else {
+  }
+} {
       next(error);
     }
   }
@@ -402,42 +482,81 @@ export function authorize(roles: UserRole[]) {
 2. **Autorisation** : Vérifie que l'utilisateur authentifié a les permissions nécessaires pour accéder à une ressource
 
 ```typescript
-// Exemple d'utilisation dans les routes
-router.post(
-  "/lessons",
-  authenticate,
-  authorize(["ADMIN", "TEACHER"]),
-  createLesson
-);
+// src/modules/auth/decorators/roles.decorator.ts
+import { SetMetadata } from "@nestjs/common";
+
+export const ROLES_KEY = "roles";
+export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+
+// src/modules/auth/guards/roles.guard.ts
+import { Injectable, CanActivate, ExecutionContext } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { ROLES_KEY } from "../decorators/roles.decorator";
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()]
+    );
+
+    if (!requiredRoles) {
+      return true;
+    }
+
+    const { user } = context.switchToHttp().getRequest();
+    return requiredRoles.includes(user.role);
+  }
+}
 ```
 
 3. **Service d'authentification** : Gère la connexion, l'inscription et la gestion des tokens
 
 ```typescript
-// services/authService.ts
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { prisma } from "../config/database";
-import { UnauthorizedError } from "../utils/errors";
+// src/modules/auth/auth.service.ts
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { PrismaService } from "../prisma/prisma.service";
+import { UsersService } from "../users/users.service";
+import * as bcrypt from "bcrypt";
 
+@Injectable()
 export class AuthService {
-  async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { email } });
+  constructor(
+    private prisma: PrismaService,
+    private usersService: UsersService,
+    private jwtService: JwtService
+  ) {}
+
+  async validateUser(email: string, password: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      throw new UnauthorizedError("Invalid credentials");
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
-      throw new UnauthorizedError("Invalid credentials");
+      throw new UnauthorizedException("Invalid credentials");
     }
 
-    const token = this.generateToken(user.id, user.role);
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    };
+  }
+
+  async login(user: any) {
+    const payload = { sub: user.id, email: user.email, role: user.role };
 
     return {
-      token,
+      token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
@@ -455,7 +574,7 @@ export class AuthService {
     lastName?: string;
   }) {
     // Vérifier si l'email ou le nom d'utilisateur existe déjà
-    const existingUser = await prisma.user.findFirst({
+    const existingUser = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: userData.email }, { username: userData.username }],
       },
@@ -473,7 +592,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(userData.password, 10);
 
     // Créer l'utilisateur
-    const user = await prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email: userData.email,
         username: userData.username,
@@ -485,7 +604,7 @@ export class AuthService {
     });
 
     // Créer les préférences utilisateur par défaut
-    await prisma.userPreference.create({
+    await this.prisma.userPreference.create({
       data: {
         userId: user.id,
         language: "fr",
@@ -495,10 +614,10 @@ export class AuthService {
       },
     });
 
-    const token = this.generateToken(user.id, user.role);
+    const payload = { sub: user.id, email: user.email, role: user.role };
 
     return {
-      token,
+      token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         email: user.email,
@@ -507,49 +626,95 @@ export class AuthService {
       },
     };
   }
-
-  private generateToken(userId: string, role: string) {
-    return jwt.sign({ id: userId, role }, process.env.JWT_SECRET!, {
-      expiresIn: "7d",
-    });
-  }
 }
 ```
 
 ### Comment implémenter une validation robuste des données ?
 
-La validation des données est implémentée à l'aide de la bibliothèque Zod :
+La validation des données est implémentée à l'aide de la bibliothèque class-validator et du système de pipes de NestJS :
 
-1. **Définition des schémas de validation** :
+1. **Définition des DTO (Data Transfer Objects)** :
 
 ```typescript
-// validation/schemas.ts
-import { z } from "zod";
+// src/modules/users/dto/create-user.dto.ts
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  Matches,
+} from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
-export const userSchema = z.object({
-  email: z.string().email("Email invalide"),
-  username: z
-    .string()
-    .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères")
-    .max(30),
-  password: z
-    .string()
-    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
-    .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
-    .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre"),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-});
+export class CreateUserDto {
+  @IsEmail({}, { message: "Email invalide" })
+  @ApiProperty({ example: "user@example.com" })
+  email: string;
+
+  @IsString()
+  @MinLength(3)
+  @MaxLength(30)
+  @ApiProperty({ example: "username123" })
+  username: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(100)
+  @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
+    message: "Le mot de passe est trop faible",
+  })
+  @ApiProperty({ example: "Password123!" })
+  password: string;
+
+  @IsString()
+  @MaxLength(50)
+  @ApiProperty({ required: false, example: "John" })
+  firstName?: string;
+
+  @IsString()
+  @MaxLength(50)
+  @ApiProperty({ required: false, example: "Doe" })
+  lastName?: string;
+}
+
+// src/modules/auth/dto/login.dto.ts
+import { IsEmail, IsString } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+
+export class LoginDto {
+  @IsEmail()
+  @ApiProperty({ example: "user@example.com" })
+  email: string;
+
+  @IsString()
+  @ApiProperty({ example: "Password123!" })
+  password: string;
+}
+```
+
+2. **Configuration de la validation globale** :
+   .string()
+   .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères")
+   .max(30),
+   password: z
+   .string()
+   .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+   .regex(/[A-Z]/, "Le mot de passe doit contenir au moins une majuscule")
+   .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre"),
+   firstName: z.string().optional(),
+   lastName: z.string().optional(),
+   });
 
 export const lessonSchema = z.object({
-  title: z.string().min(1, "Le titre est requis"),
-  description: z.string().min(1, "La description est requise"),
-  moduleId: z.string().uuid("ID de module invalide"),
-  order: z.number().int().positive(),
+title: z.string().min(1, "Le titre est requis"),
+description: z.string().min(1, "La description est requise"),
+moduleId: z.string().uuid("ID de module invalide"),
+order: z.number().int().positive(),
 });
 
 // Plus de schémas...
-```
+
+````
 
 2. **Middleware de validation** :
 
@@ -578,23 +743,79 @@ export function validate(schema: z.ZodSchema) {
     }
   };
 }
-```
+```typescript
+// src/main.ts
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
 
-3. **Utilisation dans les routes** :
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Configuration de la validation globale
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Supprime les propriétés non définies dans les DTO
+      forbidNonWhitelisted: true, // Rejette les requêtes avec des propriétés non définies
+      transform: true, // Transforme automatiquement les données selon les types des DTO
+    }),
+  );
+
+  // Configuration de Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Trio Signo API')
+    .setDescription('API de l\'application Trio Signo')
+    .setVersion('1.0')
+    .addTag('auth')
+    .addTag('users')
+    .addTag('signs')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
+  await app.listen(3001);
+}
+bootstrap();
+````
+
+3. **Utilisation dans les contrôleurs** :
 
 ```typescript
-// routes/userRoutes.ts
-import express from "express";
-import { registerUser, loginUser } from "../controllers/authController";
-import { validate } from "../middleware/validation";
-import { userSchema, loginSchema } from "../validation/schemas";
+// src/modules/auth/auth.controller.ts
+import { Controller, Post, Body, UseGuards } from "@nestjs/common";
+import { AuthService } from "./auth.service";
+import { CreateUserDto } from "../users/dto/create-user.dto";
+import { LoginDto } from "./dto/login.dto";
+import { LocalAuthGuard } from "./guards/local-auth.guard";
+import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 
-const router = express.Router();
+@ApiTags("auth")
+@Controller("auth")
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
 
-router.post("/register", validate(userSchema), registerUser);
-router.post("/login", validate(loginSchema), loginUser);
+  @Post("register")
+  @ApiOperation({ summary: "Register a new user" })
+  @ApiResponse({ status: 201, description: "User successfully registered." })
+  @ApiResponse({ status: 400, description: "Bad request." })
+  async register(@Body() createUserDto: CreateUserDto) {
+    return this.authService.register(createUserDto);
+  }
 
-export default router;
+  @Post("login")
+  @ApiOperation({ summary: "Login a user" })
+  @ApiResponse({ status: 200, description: "User successfully logged in." })
+  @ApiResponse({ status: 401, description: "Unauthorized." })
+  async login(@Body() loginDto: LoginDto) {
+    const user = await this.authService.validateUser(
+      loginDto.email,
+      loginDto.password
+    );
+    return this.authService.login(user);
+  }
+}
 ```
 
 ## Tests et Qualité de Code
@@ -606,28 +827,35 @@ Le backend est testé à plusieurs niveaux :
 1. **Tests unitaires** avec Jest :
 
 ```typescript
-// __tests__/services/userService.test.ts
-import { UserService } from "../../services/userService";
-import { prisma } from "../../config/database";
+// src/modules/users/users.service.spec.ts
+import { Test, TestingModule } from "@nestjs/testing";
+import { UsersService } from "./users.service";
+import { PrismaService } from "../prisma/prisma.service";
 
-// Mock Prisma
-jest.mock("../../config/database", () => ({
-  prisma: {
-    user: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
+const mockPrismaService = {
+  user: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
   },
-}));
+};
 
-describe("UserService", () => {
-  let userService: UserService;
+describe("UsersService", () => {
+  let service: UsersService;
+  let prisma: PrismaService;
 
-  beforeEach(() => {
-    userService = new UserService();
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        UsersService,
+        { provide: PrismaService, useValue: mockPrismaService },
+      ],
+    }).compile();
+
+    service = module.get<UsersService>(UsersService);
+    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 
@@ -639,25 +867,24 @@ describe("UserService", () => {
         username: "testuser",
       };
 
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
 
-      const result = await userService.getUserById("123");
+      const result = await service.getUserById("123");
 
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: { id: "123" },
       });
       expect(result).toEqual(mockUser);
     });
 
-    it("should return null when user not found", async () => {
-      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+    it("should throw NotFoundException when user not found", async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      const result = await userService.getUserById("123");
+      await expect(service.getUserById("123")).rejects.toThrow();
 
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
         where: { id: "123" },
       });
-      expect(result).toBeNull();
     });
   });
 
@@ -665,23 +892,146 @@ describe("UserService", () => {
 });
 ```
 
-2. **Tests d'intégration** avec Supertest :
+2. **Tests d'intégration** avec le module de test NestJS :
 
 ```typescript
-// __tests__/integration/auth.test.ts
-import request from "supertest";
-import { app } from "../../app";
-import { prisma } from "../../config/database";
-import bcrypt from "bcrypt";
+// src/modules/auth/auth.controller.spec.ts
+import { Test, TestingModule } from "@nestjs/testing";
+import { AuthController } from "./auth.controller";
+import { AuthService } from "./auth.service";
+import { JwtService } from "@nestjs/jwt";
+import { UsersService } from "../users/users.service";
+import { PrismaService } from "../prisma/prisma.service";
+import { UnauthorizedException } from "@nestjs/common";
 
-describe("Auth API", () => {
+describe("AuthController", () => {
+  let controller: AuthController;
+  let authService: AuthService;
+
+  const mockAuthService = {
+    validateUser: jest.fn(),
+    login: jest.fn(),
+    register: jest.fn(),
+  };
+
+  const mockJwtService = {
+    sign: jest.fn(),
+  };
+
+  const mockUsersService = {
+    findOne: jest.fn(),
+  };
+
+  const mockPrismaService = {
+    user: {
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      create: jest.fn(),
+    },
+    userPreference: {
+      create: jest.fn(),
+    },
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [AuthController],
+      providers: [
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: JwtService, useValue: mockJwtService },
+        { provide: UsersService, useValue: mockUsersService },
+        { provide: PrismaService, useValue: mockPrismaService },
+      ],
+    }).compile();
+
+    controller = module.get<AuthController>(AuthController);
+    authService = module.get<AuthService>(AuthService);
+    jest.clearAllMocks();
+  });
+
+  describe("login", () => {
+    it("should login successfully with valid credentials", async () => {
+      const loginDto = { email: "test@example.com", password: "Password123!" };
+      const user = {
+        id: "123",
+        email: "test@example.com",
+        username: "testuser",
+        role: "STUDENT",
+      };
+      const loginResult = {
+        token: "jwt-token",
+        user,
+      };
+
+      mockAuthService.validateUser.mockResolvedValue(user);
+      mockAuthService.login.mockResolvedValue(loginResult);
+
+      const result = await controller.login(loginDto);
+
+      expect(mockAuthService.validateUser).toHaveBeenCalledWith(
+        loginDto.email,
+        loginDto.password
+      );
+      expect(mockAuthService.login).toHaveBeenCalledWith(user);
+      expect(result).toEqual(loginResult);
+    });
+
+    it("should throw UnauthorizedException with invalid credentials", async () => {
+      const loginDto = { email: "test@example.com", password: "WrongPassword" };
+
+      mockAuthService.validateUser.mockRejectedValue(
+        new UnauthorizedException("Invalid credentials")
+      );
+
+      await expect(controller.login(loginDto)).rejects.toThrow(
+        UnauthorizedException
+      );
+    });
+  });
+
+  // Plus de tests...
+});
+```
+
+3. **Tests end-to-end (e2e)** avec le module de test NestJS et Supertest :
+
+```typescript
+// test/auth.e2e-spec.ts
+import { Test, TestingModule } from "@nestjs/testing";
+import { INestApplication, ValidationPipe } from "@nestjs/common";
+import * as request from "supertest";
+import { AppModule } from "../src/app.module";
+import { PrismaService } from "../src/modules/prisma/prisma.service";
+import * as bcrypt from "bcrypt";
+
+describe("AuthController (e2e)", () => {
+  let app: INestApplication;
+  let prismaService: PrismaService;
+
   beforeAll(async () => {
-    // Préparer la base de données de test
-    await prisma.user.deleteMany();
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    );
+
+    await app.init();
+
+    prismaService = app.get<PrismaService>(PrismaService);
+
+    // Nettoyer la base de données de test
+    await prismaService.user.deleteMany();
 
     // Créer un utilisateur de test
-    const hashedPassword = await bcrypt.hash("Password123", 10);
-    await prisma.user.create({
+    const hashedPassword = await bcrypt.hash("Password123!", 10);
+    await prismaService.user.create({
       data: {
         email: "test@example.com",
         username: "testuser",
@@ -693,31 +1043,35 @@ describe("Auth API", () => {
 
   afterAll(async () => {
     // Nettoyer la base de données
-    await prisma.user.deleteMany();
-    await prisma.$disconnect();
+    await prismaService.user.deleteMany();
+    await prismaService.$disconnect();
+    await app.close();
   });
 
-  describe("POST /api/auth/login", () => {
-    it("should login successfully with valid credentials", async () => {
-      const response = await request(app).post("/api/auth/login").send({
-        email: "test@example.com",
-        password: "Password123",
-      });
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty("token");
-      expect(response.body.user).toHaveProperty("id");
-      expect(response.body.user.email).toBe("test@example.com");
+  describe("/auth/login (POST)", () => {
+    it("should login successfully with valid credentials", () => {
+      return request(app.getHttpServer())
+        .post("/auth/login")
+        .send({
+          email: "test@example.com",
+          password: "Password123!",
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty("token");
+          expect(res.body.user).toHaveProperty("id");
+          expect(res.body.user.email).toBe("test@example.com");
+        });
     });
 
-    it("should return 401 with invalid credentials", async () => {
-      const response = await request(app).post("/api/auth/login").send({
-        email: "test@example.com",
-        password: "WrongPassword",
-      });
-
-      expect(response.status).toBe(401);
-      expect(response.body).toHaveProperty("message");
+    it("should return 401 with invalid credentials", () => {
+      return request(app.getHttpServer())
+        .post("/auth/login")
+        .send({
+          email: "test@example.com",
+          password: "WrongPassword",
+        })
+        .expect(401);
     });
   });
 
@@ -725,7 +1079,7 @@ describe("Auth API", () => {
 });
 ```
 
-3. **Exécution des tests** :
+4. **Exécution des tests** :
 
 ```bash
 # Exécuter tous les tests
@@ -734,11 +1088,11 @@ npm test
 # Exécuter les tests unitaires uniquement
 npm run test:unit
 
-# Exécuter les tests d'intégration uniquement
-npm run test:integration
+# Exécuter les tests e2e uniquement
+npm run test:e2e
 
 # Exécuter les tests avec couverture
-npm run test:coverage
+npm run test:cov
 ```
 
 ### Comment assurer la qualité du code ?

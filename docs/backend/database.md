@@ -16,7 +16,6 @@ Voici un exemple simplifié du schéma Prisma utilisé dans l'application:
 
 ```prisma
 // Schéma Prisma simplifié pour Trio Signo
-
 generator client {
   provider = "prisma-client-js"
 }

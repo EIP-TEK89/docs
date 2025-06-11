@@ -8,16 +8,32 @@ Cette page documente les endpoints API disponibles dans le backend Trio Signo. L
 
 ## Base URL
 
+En développement, la base URL de l'API est:
+
 ```
 http://localhost:3000/api
+```
+
+En production, la base URL de l'API est:
+
+```
+http://triosigno.com:3000/api
 ```
 
 ## Documentation Swagger
 
 Une documentation Swagger complète et interactive est disponible à l'adresse suivante lorsque le serveur est en cours d'exécution:
 
+En développement, vous pouvez accéder à la documentation Swagger à l'adresse:
+
 ```
 http://localhost:3000/api/docs
+```
+
+En production, la documentation est accessible à:
+
+```
+http://triosigno.com:3000/api/docs
 ```
 
 Cette documentation permet de:

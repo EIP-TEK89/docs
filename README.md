@@ -66,11 +66,11 @@ This command generates static content into the `build` directory and can be serv
 
 ## Deployment
 
-The documentation is automatically deployed to doc.triosigno.com through GitHub Actions when changes are pushed to the main branch.
+The documentation is automatically deployed to [docs.triosigno.com](https://docs.triosigno.com/) through GitHub Actions when changes are pushed to the main branch.
 
 ## Contributing
 
-Contributions to the TrioSigno documentation are welcome! Please see our [contribution guidelines](https://doc.triosigno.com/docs/contribution/code-guidelines) for more information.
+Contributions to the TrioSigno documentation are welcome! Please see our [contribution guidelines](https://docs.triosigno.com/docs/contribution/code-guidelines) for more information.
 
 ## License
 

@@ -6,186 +6,193 @@ sidebar_position: 1
 
 ## Introduction
 
-Le backend de TrioSigno est construit avec NestJS et TypeScript, fournissant une API RESTful robuste pour gérer les données de l'application, l'authentification des utilisateurs, et la logique métier.
+Le backend de Trio Signo est une API robuste construite pour l'application Trio Signo, une plateforme éducative dédiée à l'apprentissage de la langue des signes. Ce backend fournit toutes les fonctionnalités nécessaires pour gérer l'authentification des utilisateurs, le stockage des données, les leçons, les exercices et plus encore.
 
 ## Technologies principales
 
-- **NestJS**: Framework progressif pour créer des applications serveur efficaces et évolutives
-- **TypeScript**: Superset de JavaScript avec typage statique
-- **Prisma**: ORM pour interagir avec la base de données PostgreSQL
-- **PostgreSQL**: Système de gestion de base de données relationnelle
-- **Passport.js**: Middleware d'authentification
-- **Jest**: Framework de test
-- **Docker**: Conteneurisation pour le déploiement
+- **[NestJS](https://nestjs.com/)** - Framework progressif pour construire des applications serveur efficaces et évolutives
+- **[Prisma](https://www.prisma.io/)** - ORM moderne pour Node.js et TypeScript
+- **[PostgreSQL](https://www.postgresql.org/)** - Système de gestion de base de données relationnelle
+- **[TypeScript](https://www.typescriptlang.org/)** - Langage de programmation typé basé sur JavaScript
+- **JWT** - Pour l'authentification sécurisée
+- **OAuth2** - Support pour l'authentification via Google
+- **Jest** - Framework de test
+- **Docker** - Conteneurisation pour le déploiement
 
 ## Architecture
 
-L'architecture backend de TrioSigno suit les principes de l'architecture hexagonale (ports et adaptateurs), avec une séparation claire des responsabilités :
+L'architecture du backend Trio Signo est organisée en modules, suivant les principes de NestJS pour une application bien structurée et maintenable:
 
 ```
-backend/
+trio-signo-server/
 ├── src/
-│   ├── config/           # Configuration de l'application
 │   ├── auth/             # Module d'authentification
 │   ├── users/            # Module de gestion des utilisateurs
+│   ├── dictionary/       # Module de dictionnaire de signes
 │   ├── lessons/          # Module de gestion des leçons
-│   ├── progress/         # Module de suivi de la progression
-│   ├── gamification/     # Module de gamification
-│   ├── common/           # Utilitaires, filtres, et pipes communs
-│   ├── prisma/           # Client Prisma et schémas
+│   ├── exercises/        # Module d'exercices d'apprentissage
+│   ├── common/           # Utilitaires et services communs
+│   ├── config/           # Configuration de l'application
+│   ├── prisma/           # Service et schéma Prisma
 │   ├── app.module.ts     # Module racine de l'application
 │   ├── app.controller.ts # Contrôleur racine
 │   ├── app.service.ts    # Service racine
 │   └── main.ts           # Point d'entrée de l'application
-└── test/                 # Tests d'intégration et e2e
+├── test/                 # Tests e2e
+├── prisma/               # Schémas et migrations Prisma
+│   ├── schema.prisma     # Définition du schéma de données
+│   └── migrations/       # Migrations de base de données
+└── config/               # Fichiers de configuration
 ```
 
 ## Modules principaux
 
 ### Module d'authentification
 
-Gère l'inscription, la connexion, et la validation des utilisateurs via JWT.
+Ce module gère l'inscription, la connexion et la validation des utilisateurs. Il prend en charge:
+
+- L'authentification par identifiant/mot de passe
+- L'authentification OAuth2 via Google
+- La gestion des tokens JWT
+- La récupération de mot de passe
 
 ### Module de gestion des utilisateurs
 
-Responsable du CRUD des profils utilisateurs, incluant les préférences et les données personnelles.
+Ce module s'occupe de toutes les opérations relatives aux utilisateurs:
+
+- Création et gestion des profils
+- Mise à jour des informations personnelles
+- Gestion des préférences
+- Suivi des statistiques d'utilisation
+
+### Module de dictionnaire
+
+Gère la base de données de signes:
+
+- Recherche et consultation du dictionnaire de signes
+- Catégorisation des signes
+- Accès aux vidéos et descriptions des signes
 
 ### Module de leçons
 
-Gère le contenu d'apprentissage, les exercices et la progression des utilisateurs.
+Responsable du contenu pédagogique:
 
-### Module de gamification
+- Organisation des leçons par thèmes et niveaux
+- Suivi de la progression de l'apprentissage
+- Séquençage du contenu éducatif
 
-Implémente les mécanismes de jeu comme les points, les badges, et les défis.
+### Module d'exercices
 
-### Module d'IA (intégration)
+Gère les différents types d'exercices proposés aux utilisateurs:
 
-Interface avec le service d'IA Python pour l'analyse des gestes en langue des signes.
+- Exercices de reconnaissance de signes
+- Quizz et tests de connaissances
+- Exercices pratiques avec évaluation
 
 ## Base de données
 
-TrioSigno utilise PostgreSQL comme système de base de données principal, avec Prisma comme ORM. Le schéma de base de données est conçu pour optimiser les performances et maintenir l'intégrité des données.
+Trio Signo utilise PostgreSQL comme système de base de données principal, avec Prisma comme ORM. Le schéma de base de données est conçu pour optimiser les performances et maintenir l'intégrité des données.
 
-### Schéma Prisma simplifié
+## Documentation API
 
-```prisma
-// Modèle utilisateur
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  username      String    @unique
-  password      String
-  profilePicture String?
-  level         Int       @default(1)
-  xp            Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  progress      Progress?
-  badges        Badge[]
-  dailyStreak   Int       @default(0)
-  lastActive    DateTime  @default(now())
-}
+Une documentation Swagger complète de l'API est disponible lorsque le serveur est en cours d'exécution à l'adresse:
 
-// Modèle de leçon
-model Lesson {
-  id          String     @id @default(uuid())
-  title       String
-  description String
-  difficulty  String
-  category    String
-  duration    Int
-  exercises   Exercise[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-// Modèle d'exercice
-model Exercise {
-  id        String   @id @default(uuid())
-  type      String
-  content   Json
-  points    Int
-  lessonId  String
-  lesson    Lesson   @relation(fields: [lessonId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// Modèle de progression
-model Progress {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id])
-  lessonsCompleted  String[]
-  exercisesCompleted String[]
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
-// Modèle de badge
-model Badge {
-  id          String   @id @default(uuid())
-  name        String
-  description String
-  imageUrl    String
-  users       User[]
-  createdAt   DateTime @default(now())
-}
+```
+http://localhost:3000/api/docs
 ```
 
-## API RESTful
+Cette documentation interactive permet de:
 
-L'API de TrioSigno suit les principes REST, avec des endpoints organisés logiquement par domaine. Toutes les communications sont sécurisées via HTTPS et JWT pour l'authentification.
+- Explorer tous les endpoints disponibles
+- Tester les requêtes directement depuis l'interface
+- Comprendre la structure des données attendues et retournées
 
-### Exemples d'endpoints
+## Endpoints principaux
 
-- **Authentication**
+- **/auth** - Authentification et gestion des utilisateurs
+- **/dictionary** - Gestion du dictionnaire de signes
+- **/lessons** - Accès aux leçons et contenu éducatif
+- **/exercises** - Interaction avec les exercices d'apprentissage
 
-  - `POST /auth/register` - Inscription
-  - `POST /auth/login` - Connexion
-  - `POST /auth/refresh` - Rafraîchir le token
+## Démarrage rapide
 
-- **Users**
+Pour lancer le serveur de développement:
 
-  - `GET /users/me` - Profil de l'utilisateur connecté
-  - `PATCH /users/me` - Mettre à jour le profil
-  - `GET /users/leaderboard` - Classement des utilisateurs
+```bash
+# Installation des dépendances
+npm install
 
-- **Lessons**
+# Configuration des variables d'environnement
+cp .env.example .env
+# Modifiez les variables dans le fichier .env selon votre configuration
 
-  - `GET /lessons` - Liste des leçons
-  - `GET /lessons/:id` - Détails d'une leçon
-  - `POST /lessons/:id/start` - Commencer une leçon
-  - `POST /lessons/:id/complete` - Marquer une leçon comme terminée
+# Exécution des migrations Prisma
+npx prisma migrate dev
 
-- **Exercises**
+# Démarrage du serveur en mode développement
+npm run start:dev
+```
 
-  - `GET /exercises/:id` - Détails d'un exercice
-  - `POST /exercises/:id/submit` - Soumettre une réponse
+## Développement
 
-- **Progress**
-  - `GET /progress` - Progression de l'utilisateur
-  - `GET /progress/statistics` - Statistiques de l'utilisateur
+Des commandes utiles pour le développement:
 
-## Sécurité
+```bash
+# Mode développement avec rechargement à chaud
+npm run start:dev
 
-Le backend implémente plusieurs couches de sécurité :
+# Tests unitaires
+npm run test
 
-- Authentification JWT avec tokens d'accès et de rafraîchissement
-- Validation des données entrantes avec class-validator
-- Protection contre les attaques CSRF
-- Rate limiting pour prévenir les attaques par force brute
-- Sanitisation des entrées utilisateur
-- Gestion sécurisée des mots de passe avec bcrypt
+# Tests end-to-end
+npm run test:e2e
 
-## Tests
+# Couverture de test
+npm run test:cov
 
-La stratégie de test du backend comprend :
+# Linting
+npm run lint
 
-- Tests unitaires pour les services et contrôleurs
-- Tests d'intégration pour les modules
-- Tests e2e pour les flux complets d'API
+# Formatage du code
+npm run format
+```
+
+## Docker
+
+Le projet peut être exécuté dans Docker:
+
+```bash
+# Développement
+docker-compose -f docker-compose.dev.yml up
+
+# Production
+docker-compose up
+```
 
 ## Déploiement
 
-Le backend est déployé via Docker et orchestré avec Docker Compose, permettant une mise à l'échelle horizontale facile et une intégration continue via GitHub Actions.
+### Production
+
+Pour déployer en production:
+
+```bash
+# Construction pour la production
+npm run build
+
+# Démarrage en mode production
+npm run start:prod
+```
+
+### CI/CD
+
+Le projet utilise GitHub Actions pour l'intégration et le déploiement continus. Voir le dossier `.github/workflows` pour plus de détails.
+
+## Sécurité
+
+Le backend implémente plusieurs couches de sécurité:
+
+- Authentification JWT avec tokens d'accès et de rafraîchissement
+- Support OAuth2 pour l'authentification via Google
+- Validation des données entrantes
+- Gestion sécurisée des mots de passe
+- Protection contre les attaques courantes

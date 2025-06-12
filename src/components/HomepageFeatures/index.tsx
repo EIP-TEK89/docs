@@ -7,7 +7,7 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 type FeatureItem = {
   title: string;
   titleEn: string;
-  Svg: React.ComponentType<React.ComponentProps<"svg">>;
+  Svg: any; // Changé de React.ComponentType<React.ComponentProps<"svg">> pour accepter les images PNG
   description: ReactNode;
   descriptionEn: ReactNode;
 };
@@ -16,7 +16,7 @@ const FeatureList: FeatureItem[] = [
   {
     title: "Application Ludique",
     titleEn: "Gamified Experience",
-    Svg: require("@site/static/img/undraw_docusaurus_mountain.svg").default,
+    Svg: require("@site/static/img/image-1-removebg-preview.png").default,
     description: (
       <>
         TrioSigno transforme l'apprentissage de la LSF en une expérience ludique
@@ -33,7 +33,7 @@ const FeatureList: FeatureItem[] = [
   {
     title: "IA de Reconnaissance",
     titleEn: "Sign Recognition AI",
-    Svg: require("@site/static/img/undraw_docusaurus_tree.svg").default,
+    Svg: require("@site/static/img/image-2-removebg-preview.png").default,
     description: (
       <>
         Notre IA reconnaît et évalue vos gestes en temps réel, en vous donnant
@@ -50,7 +50,7 @@ const FeatureList: FeatureItem[] = [
   {
     title: "Architecture Moderne",
     titleEn: "Modern Architecture",
-    Svg: require("@site/static/img/undraw_docusaurus_react.svg").default,
+    Svg: require("@site/static/img/image-3-removebg-preview.png").default,
     description: (
       <>
         Développée avec des technologies modernes (React, NestJS, PostgreSQL,
@@ -79,7 +79,11 @@ function Feature({
   return (
     <div className={clsx("col col--4")}>
       <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+        {typeof Svg === 'function' ? (
+          <Svg className={styles.featureSvg} role="img" />
+        ) : (
+          <img src={Svg} className={styles.featureSvg} alt={isEnglish ? titleEn : title} />
+        )}
       </div>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{isEnglish ? titleEn : title}</Heading>

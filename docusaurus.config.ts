@@ -78,7 +78,7 @@ const config: Config = {
       title: "TrioSigno",
       logo: {
         alt: "TrioSigno Logo",
-        src: "img/triosigno-logo.svg",
+        src: "img/triosigno-logo.png",
       },
       items: [
         // Documentation

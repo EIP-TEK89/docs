@@ -2,66 +2,64 @@
 sidebar_position: 1
 ---
 
-# Vue d'ensemble de l'IA
+# AI Overview
 
 ## Introduction
 
-Le composant IA de TrioSigno est responsable de la reconnaissance et de l'analyse des gestes en langue des signes française (LSF). Cette technologie permet aux utilisateurs de pratiquer leurs compétences en LSF et de recevoir un retour en temps réel sur leur exécution.
+The AI component of TrioSigno is responsible for recognizing and analyzing gestures in French Sign Language (LSF). This technology allows users to practice their LSF skills and receive real-time feedback on their performance.
 
-## Technologies principales
+## Core Technologies
 
-- **Python**: Langage principal pour le développement du modèle d'IA
-- **TensorFlow/Keras**: Framework pour l'entraînement et l'inférence du modèle
-- **MediaPipe**: Bibliothèque Google pour la détection des mains et des points de repère
-- **OpenCV**: Traitement d'images et de vidéos en temps réel
-- **Flask**: API légère pour servir le modèle
-- **Docker**: Conteneurisation pour le déploiement
+* **Python**: Main language for AI model development
+* **TensorFlow/Keras**: Framework for training and inference
+* **MediaPipe**: Google library for hand and landmark detection
+* **OpenCV**: Real-time image and video processing
+* **Flask**: Lightweight API to serve the model
+* **Docker**: Containerization for deployment
 
-## Architecture du modèle
+## Model Architecture
 
-Le système de reconnaissance des signes de TrioSigno utilise une architecture à deux étapes :
+TrioSigno’s sign recognition system uses a two-stage architecture:
 
-1. **Détection des mains et extraction des points de repère** : Utilisation de MediaPipe pour identifier les mains dans l'image et extraire 21 points de repère 3D par main.
+1. **Hand Detection and Landmark Extraction**: MediaPipe is used to detect hands in the image and extract 21 3D landmarks per hand.
 
-2. **Classification des gestes** : Un réseau de neurones profond entraîné pour classifier les séquences de points de repère en gestes LSF spécifiques.
+2. **Gesture Classification**: A deep neural network is trained to classify landmark sequences into specific LSF gestures.
 
 ```
 ┌───────────────────┐      ┌───────────────────┐      ┌───────────────────┐
-│                   │      │                   │      │  Extraction des   │
-│  Caméra/Vidéo     │ ---> │  Détection des    │ ---> │  points de repère │
-│                   │      │ mains (MediaPipe) │      │  (Mediapipe)      │
+│                   │      │                   │      │  Landmark         │
+│  Camera / Video   │ ---> │  Hand Detection   │ ---> │  Extraction       │
+│                   │      │  (MediaPipe)      │      │  (MediaPipe)      │
 └───────────────────┘      └───────────────────┘      └─────────┬─────────┘
                                                                 │
                                                                 ▼
 ┌───────────────────┐      ┌───────────────────┐      ┌───────────────────┐
-│                   │      │                   │      │  Prétraitement    │
-│  Feedback à       │ <--- │  Classification   │ <--- │  des données      │
-│  l'utilisateur    │      │  du geste         │      │  (Normalisation / │
-│                   │      │                   │      │Précalcul vélocité)│
+│                   │      │                   │      │  Preprocessing    │
+│  User Feedback    │ <--- │  Gesture          │ <--- │  (Normalization / │
+│                   │      │  Classification   │      │  Velocity Calc.)  │
 └───────────────────┘      └───────────────────┘      └───────────────────┘
 ```
 
-## Ensemble de données
+## Dataset
 
-Le modèle d'IA a été entraîné sur un ensemble de données composé de :
+The AI model was trained on a dataset composed of:
 
-- Données publiques de la langue des signes française
-- Ensemble de données propriétaire créé spécifiquement pour TrioSigno
-- Données augmentées générées par diverses transformations
+* Public French Sign Language datasets
+* A proprietary dataset created specifically for TrioSigno
+* Augmented data generated using various transformations
 
-L'ensemble de données contient plus de 50 000 exemples couvrant :
+The dataset contains over 50,000 samples covering:
 
-- 500+ signes et expressions courantes en LSF
-- Variations d'angle, d'éclairage et de morphologie des mains
-- Différents contextes et arrière-plans
+* 500+ common LSF signs and expressions
+* Variations in hand angles, lighting, and morphology
+* Diverse contexts and backgrounds
 
-## Architecture du réseau neuronal
+## Neural Network Architecture
 
-Les modèles sont basé sur une architecture transformeur.
-Avec une flexibilité sur les données d'entré, de sortie, le nombre de tête d'attention,
-et de couches. Pour proposer des modèles et performant spécialisé sur seulement quelques signes
-n'utilisant en entré que les information significative pour la reconnaissances des dit signes.
-(Exemple: L'alphabet de LSF n'exige que l'usage des mains, les données d'entrée n'inclueront donc pas les données du visage et du corps pour réduire la complexité et la taille du modèle)
+The models are based on a transformer architecture.
+They support flexibility in input/output structure, number of attention heads, and layers, enabling specialized lightweight models for small gesture sets.
+
+For example, the French Sign language alphabet only requires hand input—so face and body data are excluded to reduce model size and complexity.
 
 ```python
 TensorPair: TypeAlias = tuple[torch.Tensor, torch.Tensor]
@@ -374,27 +372,27 @@ class SignRecognizerTransformer(nn.Module):
             return self.getLabelID(self.forward(x))[0]
 ```
 
-## Métriques de performance
+## Performance Metrics
 
-Le modèle de reconnaissance atteint les performances suivantes :
+The gesture recognition model achieves the following:
 
-- **Précision globale** : 98% sur l'ensemble de test
-- **Précision pour les signes de base** : ~99.5%
-- **Précision pour les signes complexes** : ~95%
-- **Latence moyenne** : 0.1ms sur GPU, 1ms sur CPU
-- **Taille du modèle** : ~200KB (modèle optimisé pour le déploiement)
+* **Overall accuracy**: 98% on the test set
+* **Basic sign accuracy**: \~99.5%
+* **Complex sign accuracy**: \~95%
+* **Average latency**: 0.1ms on GPU, 1ms on CPU
+* **Model size**: \~200KB (optimized for deployment)
 
-## API de l'IA
+## AI API
 
-L'IA est exposée via une API REST développée avec Flask
-dont les endpoints sont accessible [ici](endpoints(deprecated).md)
+The AI is exposed through a REST API built with Flask.
+Endpoints are available [here](endpoints%28deprecated%29.md).
 
-## Déploiement
+## Deployment
 
-Le service d'IA est déployé dans un conteneur Docker, facilitant l'intégration avec le reste de l'infrastructure TrioSigno :
+The AI service is deployed via a Docker container, making integration with the rest of the TrioSigno infrastructure easy:
 
 ```yaml
-# Extrait du docker-compose.yml
+# docker-compose.yml excerpt
 services:
   ai-service:
     build: ./ai
@@ -417,18 +415,18 @@ services:
           memory: 2G
 ```
 
-## Amélioration continue
+## Continuous Improvement
 
-Le modèle d'IA de TrioSigno s'améliore continuellement grâce à :
+The TrioSigno AI model continuously improves through:
 
-1. **Apprentissage actif** : Identification des cas où le modèle est peu confiant pour cibler la collecte de données.
-2. **Feedback utilisateur** : Intégration des retours des utilisateurs pour améliorer la précision.
-3. **Réentraînement périodique** : Mise à jour du modèle avec de nouvelles données.
+1. **Active Learning**: Detecting low-confidence predictions to guide targeted data collection
+2. **User Feedback**: Integrating real-world feedback to improve accuracy
+3. **Periodic Retraining**: Updating the model with new samples
 
-## Intégration avec le frontend et le backend
+## Integration with Frontend and Backend
 
-L'IA s'intègre de manière transparente avec les autres composants de TrioSigno :
+The AI integrates seamlessly with other TrioSigno components:
 
-- **Frontend** : Capture des gestes via la caméra et affichage du feedback en temps réel
-- **Backend** : Stockage des résultats d'analyse pour le suivi de progression
-- **Système de gamification** : Attribution de points basée sur la précision de l'exécution des gestes
+* **Frontend**: Captures gestures via the camera and displays real-time feedback
+* **Backend**: Stores analysis results for tracking user progress
+* **Gamification system**: Awards points based on gesture accuracy

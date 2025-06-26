@@ -1,138 +1,123 @@
-Voici la traduction française complète de ton fichier Markdown :
+> The AI backend will soon be merged with the main backend, these will soon be out of service
+# Trio-Signo AI Backend API
 
----
+The following document will describe thoroughly how to use the API to communicate
+with the AI back-end part of Trio-Signo.
 
-> Le backend IA sera bientôt fusionné avec le backend principal, ceux-ci seront donc prochainement mis hors service.
+# Information
 
-# API Backend IA de Trio-Signo
+This API follow the REST convention.
 
-Ce document décrit en détail comment utiliser l’API pour communiquer avec la partie backend IA de Trio-Signo.
+Every request and response are in JSON format. No other format is supported yet.
 
-# Informations
+# Header and Authentication
 
-Cette API suit la convention REST.
+The header and authentication system has not been defined yet,
+hence there's no need to do anything to access to any endpoint of this API.
 
-Toutes les requêtes et réponses sont au format JSON. Aucun autre format n’est pris en charge pour le moment.
+<br>
+<br>
+<br>
+<br>
 
-# En-têtes et Authentification
-
-Le système d’en-têtes et d’authentification n’a pas encore été défini.
-Il n’est donc pas nécessaire d’ajouter quoi que ce soit pour accéder aux points de terminaison (endpoints) de cette API.
-
-<br><br><br><br>
-
-# Appels API
+# API Calls
 
 ## GET
+- [Ping](#get---ping)
+- [Get Sign Recognizer Model](#get---get-sign-recognizer-model)
 
-* [Ping](#get---ping)
-* [Télécharger un modèle de reconnaissance](#get---get-sign-recognizer-model)
 
 ## POST
-
-* [Reconnaître une lettre depuis une image](#post---get-alphabet)
-* [Reconnaître une lettre depuis des points 3D](#post---get-alphabet2)
+- [Get Alphabet](#post---get-alphabet)
+- [Get Alphabet2](#post---get-alphabet2)
 
 ## DELETE
+- [Get Alphabet END](#delete---get-alphabet-end)
 
-* [Fin de session de reconnaissance](#delete---get-alphabet-end)
-
-<br><br><br><br>
+<br>
+<br>
+<br>
+<br>
 
 # GET - Ping
-
-**URL :** `{root_url}/ping`
+**URL:** `{root_url}/ping`
 
 ## Description
 
-Point de terminaison simple permettant de vérifier si le serveur est actif.
+Simple endpoint that allow you to check if the server is up
 
-## Requête
+## Request
 
-### En-têtes
+### Header
+*None*
 
-*Aucun*
+### Body
+*None*
 
-### Corps
-
-*Aucun*
-
-## Réponse
-
+## Response
 ### 200
-
 ```json
 {
     "message": "pong"
 }
 ```
 
-## Exemple
-
+## Example
 ```sh
 curl -X GET "{root_url}/ping"
 ```
+<br>
+<br>
 
-<br><br>
-
-# GET - Télécharger un modèle de reconnaissance
-
-**URL :** `{root_url}/get-sign_recognizer-model/{model-name}`
+# GET - Get Sign Recognizer Model
+**URL:** `{root_url}/get-sign_recognizer-model/{model-name}`
 
 ## Description
 
-Permet de télécharger un modèle.
+Allow you to download a model
 
-## Requête
+## Request
 
-### En-têtes
+### Header
+*None*
 
-*Aucun*
+### Body
+*None*
 
-### Corps
-
-*Aucun*
-
-## Réponse
-
+## Response
 ### 200
-
-Fichier zip contenant :
-
+Array buffer of zip file containing
 ```
 model.zip/
-    |-> model.onnx # Poids du modèle
-    '-> model.json # Informations du modèle
+    |-> model.onnx # Model weights
+    '-> model.json # Model info
 ```
-
 ### 404
-
 ```json
 {
-    "message": "Aucun modèle trouvé"
+    "message": "No model found"
 }
 ```
 
-## Exemple
-
+## Example
 ```sh
-curl -X GET "{root_url}/get-sign_recognizer-model/alphabet"
+curl -X GET "{root_url}/get-sign_recognizer-model/alphabet" \
 ```
+<br>
+<br>
 
-<br><br>
-
-# POST - Reconnaître une lettre depuis une image
-
-**URL :** `{root_url}/get-alphabet`
+# POST - Get Alphabet
+**URL:** `{root_url}/get-alphabet`
 
 ## Description
 
-Reçoit une image et retourne la lettre qu'elle représente en LSF (Langue des Signes Française), ou `null` si aucune lettre n’est reconnue.
-**IMPORTANT :** ce point de terminaison conserve les images précédentes pour permettre la reconnaissance sur une séquence (vidéo). Il est donc **obligatoire** d’appeler le point [get-alphabet-end](#delete---get-alphabet-end) une fois la session terminée.
+Gets an image and return the letter it represent in LSF (French Sign Language) or nothing if it's not a letter.
+**IMPORTANT** this endpoint remembers previous image sent in case you want to send a video streaming. Therefore **you must** call [get-alphabet-end](#delete---get-alphabet-end) endpoint when finishing using this endpoint.
 
-## Requête
+## Request
 
-### En-têtes
+### Header
+You must set in your request headers the following values:
 
 ```json
 {
@@ -140,65 +125,56 @@ Reçoit une image et retourne la lettre qu'elle représente en LSF (Langue des S
 }
 ```
 
-### Corps
+### Body
+The request body should be in the **form-data** format and include the following parameters:
 
-Format **form-data** avec les paramètres suivants :
+| Key  | Type   | Description                                              |
+|------|--------|----------------------------------------------------------|
+| file | File   | The image file to be processed. (in .jpg or .png format) |
 
-| Clé  | Type                   | Description      |
-| ---- | ---------------------- | ---------------- |
-| file | Fichier (.jpg ou .png) | Image à analyser |
-
-## Réponse
-
+## Response
 ### 200
-
 ```json
 {
     "message": "A"
 }
 ```
-
-Ou si aucune main n’est détectée :
-
+Or in case no hand is found:
 ```json
 {
     "message": null
 }
 ```
-
 ### 400
-
-> Si le corps ou ses valeurs sont incorrects.
-
+> When the body or its values are incorrect.
 ```json
 {
-    "message": "Message d’erreur"
+    "message": "Error message"
 }
 ```
 
-## Exemple
-
+## Example
 ```sh
 curl -X POST "{root_url}/get-alphabet" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@B.jpg"
 ```
+<br>
+<br>
 
-<br><br>
-
-# POST - Reconnaître une lettre depuis des points 3D
-
-**URL :** `{root_url}/get-alphabet2`
+# POST - Get Alphabet 2
+**URL:** `{root_url}/get-alphabet2`
 
 ## Description
 
-Attend les points 3D générés par le modèle `MediaPipe HandLandmarker`.
+Expects the points the mediapipe handlandmarker models returns
 
-**IMPORTANT :** ce point de terminaison garde les points précédents en mémoire pour reconnaître des signes en mouvement. Il faut **obligatoirement** appeler [get-alphabet-end](#delete---get-alphabet-end) pour clore la session.
+**IMPORTANT** this endpoint remembers previous points to be able to recognize signs that moves. Therefore **you must** call [get-alphabet-end](#delete---get-alphabet-end) endpoint when finishing using this endpoint.
 
-## Requête
+## Request
 
-### En-têtes
+### Header
+You must set in your request headers the following values:
 
 ```json
 {
@@ -206,9 +182,8 @@ Attend les points 3D générés par le modèle `MediaPipe HandLandmarker`.
 }
 ```
 
-### Corps
-
-Exemple de format JSON : chaque champ peut être un tableau de 3 flottants ou `null`.
+### Body
+Example of format, each field can either be an array of 3 floats or `null`
 ```json
 {
     "l_hand_position": [
@@ -348,55 +323,47 @@ Exemple de format JSON : chaque champ peut être un tableau de 3 flottants ou `n
 }
 ```
 
-## Réponse
-
+## Response
 ### 200
-
 ```json
 {
     "message": "A"
 }
 ```
-
-Ou si aucune main n’est détectée :
-
+Or in case no hand is found:
 ```json
 {
     "message": null
 }
 ```
-
 ### 400
-
-> Si le corps ou ses valeurs sont incorrects.
-
+> When the body or its values are incorrect.
 ```json
 {
-    "message": "Message d’erreur"
+    "message": "Error message"
 }
 ```
 
-## Exemple
-
+## Example
 ```sh
 curl -X POST "{root_url}/get-alphabet2" \
   -H "Content-Type: application/json" \
-  -d "votre JSON"
+  -B "your json data"
 ```
+<br>
+<br>
 
-<br><br>
-
-# DELETE - Fin de session de reconnaissance
-
-**URL :** `{root_url}/get-alphabet-end`
+# DELETE - Get Alphabet END
+**URL:** `{root_url}/get-alphabet-end`
 
 ## Description
 
-Nettoie l’historique des images/points après l’utilisation de l’endpoint [get-alphabet](#post---get-alphabet) ou [get-alphabet2](#post---get-alphabet2).
+Cleanup image history after using [get-alphabet](get-alphabet.md) endpoint.
 
-## Requête
+## Request
 
-### En-têtes
+### Header
+You must set in your request headers the following values:
 
 ```json
 {
@@ -404,32 +371,25 @@ Nettoie l’historique des images/points après l’utilisation de l’endpoint 
 }
 ```
 
-### Corps
+### Body
+*None*
 
-*Aucun*
-
-## Réponse
-
+## Response
 ### 200
-
 ```json
 {
-    "message": "Historique supprimé"
+    "message": "Sample history deleted"
 }
 ```
-
 ### 400
-
-> Si la requête est invalide (par exemple, mauvaise IP).
-
+> When the body or its values are incorrect.
 ```json
 {
-    "message": "Adresse IP invalide"
+    "message": "Invalid IP address"
 }
 ```
 
-## Exemple
-
+## Example
 ```sh
 curl -X DELETE "{root_url}/get-alphabet" \
   -H "Content-Type: multipart/form-data"

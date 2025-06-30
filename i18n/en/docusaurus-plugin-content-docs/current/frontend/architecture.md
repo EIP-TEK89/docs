@@ -2,26 +2,26 @@
 sidebar_position: 2
 ---
 
-# Architecture Frontend
+# Frontend Architecture
 
-## Architecture Technique
+## Technical Architecture
 
-L'architecture frontend de TrioSigno est basée sur les principes de développement React modernes, en mettant l'accent sur la modularité, la réutilisabilité et la maintenabilité du code.
+TrioSigno's frontend architecture is based on modern React development principles, emphasizing modularity, reusability, and code maintainability.
 
-### Diagramme d'architecture
+### Architecture Diagram
 
 ```
 ┌───────────────────────────────────────────────────────────┐
-│                    Application Frontend                   │
+│                    Frontend Application                    │
 ├───────────┬───────────────┬──────────────┬────────────────┤
 │           │               │              │                │
-│  Services │  Composants   │    Hooks     │    Context     │
-│    API    │               │              │      API       │
+│   API     │  Components   │    Hooks     │    Context     │
+│ Services  │               │              │      API       │
 │           │               │              │                │
 ├───────────┼───────────────┼──────────────┼────────────────┤
 │           │               │              │                │
-│  Clients  │    Pages      │   Routage    │  Intercepteurs │
-│    HTTP   │               │    React     │     Axios      │
+│   HTTP    │    Pages      │    React     │     Axios      │
+│  Clients  │               │   Routing    │  Interceptors  │
 │           │               │              │                │
 ├───────────┴───────────────┴──────────────┴────────────────┤
 │                                                           │
@@ -30,16 +30,16 @@ L'architecture frontend de TrioSigno est basée sur les principes de développem
 └───────────────────────────────────────────────────────────┘
 ```
 
-## Gestion de l'état
+## State Management
 
-TrioSigno utilise React Context API pour la gestion de l'état global de l'application. Cette approche offre plusieurs avantages :
+TrioSigno uses React Context API for global application state management. This approach offers several advantages:
 
-- **Simplicité** : Intégré à React sans bibliothèque externe
-- **Flexibilité** : Création de contextes spécifiques à chaque domaine fonctionnel
-- **Performance** : Optimisation des re-renders via useMemo et useCallback
-- **Maintenabilité** : Logique d'état encapsulée dans des hooks personnalisés
+- **Simplicity**: Built into React without external libraries
+- **Flexibility**: Creation of contexts specific to each functional domain
+- **Performance**: Optimization of re-renders via useMemo and useCallback
+- **Maintainability**: State logic encapsulated in custom hooks
 
-### Structure du Context pour l'authentification
+### Authentication Context Structure
 
 ```typescript
 // authContext.ts
@@ -85,45 +85,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 };
 ```
 
-## Organisation des composants
+## Component Organization
 
-Les composants sont organisés selon leur fonction et leur portée dans l'application :
+Components are organized according to their function and scope in the application:
 
-1. **Composants UI** : Composants de base réutilisables (boutons, inputs, cards)
-2. **Composants fonctionnels** : Composants spécifiques à une fonctionnalité (lessons, dictionnaire)
-3. **Composants de page** : Implémentations de pages complètes
-4. **Composants de mise en page** : Structure globale de l'application (Layout, Navbar, Footer)
+1. **UI Components**: Reusable base components (buttons, inputs, cards)
+2. **Functional Components**: Components specific to a feature (lessons, dictionary)
+3. **Page Components**: Complete page implementations
+4. **Layout Components**: Global application structure (Layout, Navbar, Footer)
 
-### Exemple de structure de routage
+### Routing Structure Example
 
 ```tsx
 // Layout.tsx
-import { Route, Routes, Link, useLocation } from "react-router-dom";
-
-import Footer from "./Footer";
-import Home from "../pages/Home";
-import LogIn from "../pages/LogIn";
-import SignUp from "../pages/SignUp";
-import Navigation from "../components/Navbar";
-import Profile from "../pages/Profile";
-import LessonJourney from "../pages/LessonJourney";
-import LessonDetail from "../pages/LessonDetail";
-import Dictionary from "../pages/Dictionary";
-import DictionaryDetail from "../pages/DictionaryDetail";
-
-function AppLayout() {
-  const location = useLocation();
-  const isAuthPage =
-    location.pathname === "/login" || location.pathname === "/signup";
-
-  if (isAuthPage) {
-    return (
-      <Routes>
-        <Route path="/login" element={<LogIn />} />
-        <Route path="/signup" element={<SignUp />} />
-      </Routes>
-    );
-  }
   return (
     <div className="app-container">
       <Navigation />
@@ -161,9 +135,9 @@ function AppLayout() {
 export default AppLayout;
 ```
 
-## Système d'internationalisation (i18n)
+## Internationalization System (i18n)
 
-L'application utilise i18next pour gérer l'internationalisation :
+The application uses i18next to manage internationalization:
 
 ```typescript
 // i18n.ts
@@ -198,12 +172,12 @@ i18n
 export default i18n;
 ```
 
-## Services API
+## API Services
 
-Les services API sont organisés par domaine fonctionnel et utilisent Axios pour les requêtes HTTP :
+API services are organized by functional domain and use Axios for HTTP requests:
 
 ```typescript
-// apiClient.ts (extrait)
+// apiClient.ts (excerpt)
 import axios from "axios";
 import { API_URL } from "../constants/routes";
 import { isTokenExpired } from "../utils/tokenUtils";
@@ -235,8 +209,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-```
-
-```
-
 ```

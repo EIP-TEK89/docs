@@ -2,23 +2,23 @@
 sidebar_position: 4
 ---
 
-# Tests Frontend
+# Frontend Testing
 
 ## Introduction
 
-Les tests dans le frontend de TrioSigno sont organisés pour assurer la qualité et la stabilité de l'application. Les tests unitaires et d'intégration sont exécutés via Vitest et React Testing Library.
+Tests in the TrioSigno frontend are organized to ensure the quality and stability of the application. Unit and integration tests are executed via Vitest and React Testing Library.
 
-## Configuration des tests
+## Test Configuration
 
-### Outils de test
+### Testing Tools
 
-- **Vitest** : Remplace Jest comme framework de test, optimisé pour Vite
-- **React Testing Library** : Pour tester les composants React
-- **Mock Service Worker (MSW)** : Pour simuler les appels API
+- **Vitest**: Replaces Jest as a test framework, optimized for Vite
+- **React Testing Library**: For testing React components
+- **Mock Service Worker (MSW)**: For simulating API calls
 
 ### Configuration
 
-Le projet est configuré pour exécuter les tests avec Vitest :
+The project is configured to run tests with Vitest:
 
 ```json
 {
@@ -30,9 +30,9 @@ Le projet est configuré pour exécuter les tests avec Vitest :
 }
 ```
 
-## Structure des tests
+## Test Structure
 
-Les tests sont organisés dans le dossier `__tests__` à côté des fichiers qu'ils testent :
+Tests are organized in the `__tests__` folder next to the files they test:
 
 ```
 src/
@@ -46,11 +46,11 @@ src/
       useAuth.test.ts
 ```
 
-## Types de tests
+## Types of Tests
 
-### 1. Tests unitaires
+### 1. Unit Tests
 
-Les tests unitaires vérifient le comportement isolé des composants, hooks et fonctions utilitaires :
+Unit tests verify the isolated behavior of components, hooks, and utility functions:
 
 ```tsx
 // Button.test.tsx
@@ -79,11 +79,11 @@ describe("Button component", () => {
 });
 ```
 
-### 2. Tests d'intégration
+### 2. Integration Tests
 
-Les tests d'intégration vérifient les interactions entre plusieurs composants ou avec le Context API :
+Integration tests verify interactions between multiple components or with the Context API:
 
-```tsx
+````tsx
 // AuthContext.test.tsx
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -95,6 +95,20 @@ vi.mock("../../services/apiClient", () => ({
   default: {
     post: vi.fn().mockImplementation(mockLoginApi),
   },
+}));
+
+```tsx
+// AuthContext.test.tsx
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { AuthProvider } from "../../store/auth";
+import { LoginForm } from "../LoginForm";
+import { mockLoginApi } from "../../../mocks/authMocks";
+
+vi.mock("../../services/apiClient", () => ({
+  default: {
+    post: vi.fn().mockImplementation(mockLoginApi)
+  }
 }));
 
 describe("Authentication flow", () => {
@@ -111,27 +125,27 @@ describe("Authentication flow", () => {
     );
 
     fireEvent.change(screen.getByLabelText(/email/i), {
-      target: { value: "user@example.com" },
+      target: { value: "user@example.com" }
     });
 
     fireEvent.change(screen.getByLabelText(/password/i), {
-      target: { value: "password123" },
+      target: { value: "password123" }
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /se connecter/i }));
+    fireEvent.click(screen.getByRole("button", { name: /log in/i }));
 
     await waitFor(() => {
       expect(localStorage.getItem("token")).toBeTruthy();
     });
   });
 });
-```
+````
 
 ## Mocking
 
-### Mocking des API
+### API Mocking
 
-Pour simuler les appels API dans les tests, nous utilisons MSW (Mock Service Worker) :
+To simulate API calls in tests, we use MSW (Mock Service Worker):
 
 ```typescript
 // mocks/handlers.ts
@@ -159,24 +173,24 @@ export const handlers = [
     return res(ctx.status(401), ctx.json({ message: "Invalid credentials" }));
   }),
 
-  // Autres handlers...
+  // Other handlers...
 ];
 ```
 
-## Bonnes pratiques
+## Best Practices
 
-1. **Tests axés sur le comportement** : Tester ce que l'utilisateur voit et peut faire, pas l'implémentation
-2. **Éviter les tests fragiles** : Utiliser des sélecteurs robustes comme les textes et les rôles ARIA
-3. **Isolation** : Chaque test doit être indépendant et ne pas dépendre d'autres tests
-4. **Mock judicieux** : Ne mocker que ce qui est nécessaire pour isoler le comportement testé
-5. **Tests de régression** : Ajouter des tests pour les bugs corrigés pour éviter les régressions
+1. **Behavior-focused tests**: Test what the user sees and can do, not the implementation
+2. **Avoid fragile tests**: Use robust selectors like text and ARIA roles
+3. **Isolation**: Each test should be independent and not depend on other tests
+4. **Judicious mocking**: Only mock what's necessary to isolate the behavior being tested
+5. **Regression tests**: Add tests for fixed bugs to prevent regressions
 
-## Exécution des tests en CI/CD
+## Running Tests in CI/CD
 
-Les tests sont automatiquement exécutés dans le pipeline CI/CD lors des pull requests et des déploiements :
+Tests are automatically run in the CI/CD pipeline during pull requests and deployments:
 
 ```yaml
-# Extrait du workflow CI
+# CI workflow excerpt
 test:
   runs-on: ubuntu-latest
   steps:

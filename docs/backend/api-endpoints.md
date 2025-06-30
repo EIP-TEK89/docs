@@ -17,7 +17,7 @@ http://localhost:3000/api
 En production, la base URL de l'API est:
 
 ```
-http://triosigno.com:3000/api
+http://triosigno.com/api
 ```
 
 ## Documentation Swagger
@@ -33,7 +33,7 @@ http://localhost:3000/api/docs
 En production, la documentation est accessible à:
 
 ```
-http://triosigno.com:3000/api/docs
+http://triosigno.com/api/docs
 ```
 
 Cette documentation permet de:

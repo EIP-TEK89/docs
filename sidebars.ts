@@ -47,7 +47,12 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "frontend/overview",
       },
-      items: ["frontend/overview", "frontend/architecture", "frontend/testing"],
+      items: [
+        "frontend/overview",
+        "frontend/architecture",
+        "frontend/internationalization",
+        "frontend/testing",
+      ],
     },
     {
       type: "category",

@@ -12,16 +12,16 @@ L'architecture frontend de TrioSigno est basée sur les principes de développem
 
 ```
 ┌───────────────────────────────────────────────────────────┐
-│                    Application Frontend                    │
+│                    Application Frontend                   │
 ├───────────┬───────────────┬──────────────┬────────────────┤
 │           │               │              │                │
-│  Services │  Composants   │    Hooks     │     Store      │
-│    API    │               │              │    (Redux)     │
+│  Services │  Composants   │    Hooks     │    Context     │
+│    API    │               │              │      API       │
 │           │               │              │                │
 ├───────────┼───────────────┼──────────────┼────────────────┤
 │           │               │              │                │
-│  Clients  │   Contexte    │   Routage    │  Middlewares   │
-│    HTTP   │    React      │    React     │                │
+│  Clients  │    Pages      │   Routage    │  Intercepteurs │
+│    HTTP   │               │    React     │     Axios      │
 │           │               │              │                │
 ├───────────┴───────────────┴──────────────┴────────────────┤
 │                                                           │
@@ -32,180 +32,211 @@ L'architecture frontend de TrioSigno est basée sur les principes de développem
 
 ## Gestion de l'état
 
-TrioSigno utilise Redux Toolkit pour la gestion globale de l'état. Cette approche offre plusieurs avantages :
+TrioSigno utilise React Context API pour la gestion de l'état global de l'application. Cette approche offre plusieurs avantages :
 
-- **Prévisibilité** : L'état de l'application suit un flux unidirectionnel
-- **Débogage facile** : Les actions et les changements d'état peuvent être tracés
-- **Organisation** : L'état est séparé en slices logiques
-- **Performance** : Utilisation de memoization pour éviter les re-renders inutiles
+- **Simplicité** : Intégré à React sans bibliothèque externe
+- **Flexibilité** : Création de contextes spécifiques à chaque domaine fonctionnel
+- **Performance** : Optimisation des re-renders via useMemo et useCallback
+- **Maintenabilité** : Logique d'état encapsulée dans des hooks personnalisés
 
-### Structure du store Redux
+### Structure du Context pour l'authentification
 
 ```typescript
-import { configureStore } from "@reduxjs/toolkit";
-import authReducer from "./slices/authSlice";
-import lessonsReducer from "./slices/lessonsSlice";
-import userProgressReducer from "./slices/userProgressSlice";
-import gamificationReducer from "./slices/gamificationSlice";
+// authContext.ts
+import { createContext } from "react";
+import type { User } from "../types";
 
-export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    lessons: lessonsReducer,
-    userProgress: userProgressReducer,
-    gamification: gamificationReducer,
-  },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(apiMiddleware),
-});
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
-```
-
-## Organisation des composants
-
-Les composants sont organisés suivant la méthodologie Atomic Design :
-
-1. **Atomes** : Composants de base (boutons, inputs, icônes)
-2. **Molécules** : Groupes de composants atomiques fonctionnant ensemble
-3. **Organismes** : Sections complètes de l'interface utilisateur
-4. **Templates** : Structures de page sans contenu spécifique
-5. **Pages** : Implémentations spécifiques des templates avec du contenu réel
-
-### Exemple de structure de composant
-
-```tsx
-// Exemple d'un composant de carte de leçon
-import React from "react";
-import { useDispatch } from "react-redux";
-import { Card, ProgressBar, Badge, Button } from "@components/atoms";
-import { LessonIcon } from "@components/molecules";
-import { startLesson } from "@redux/slices/lessonsSlice";
-import { LessonType } from "@types";
-
-interface LessonCardProps {
-  lesson: LessonType;
-  completed: boolean;
-  progress: number;
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (userData: any) => Promise<void>;
+  logout: () => void;
+  refreshToken: () => Promise<string>;
 }
 
-export const LessonCard: React.FC<LessonCardProps> = ({
-  lesson,
-  completed,
-  progress,
-}) => {
-  const dispatch = useDispatch();
+export const AuthContext = createContext<AuthState>({
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
+  login: async () => {},
+  signup: async () => {},
+  logout: () => {},
+  refreshToken: async () => "",
+});
 
-  const handleStart = () => {
-    dispatch(startLesson(lesson.id));
-  };
+// authProvider.tsx
+import type { ReactNode } from "react";
+import { AuthContext } from "./authContext";
+import { useAuthState } from "./hooks/useAuthState";
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  // Use the combined auth state hook
+  const authState = useAuthState();
 
   return (
-    <Card className="lesson-card">
-      <LessonIcon type={lesson.type} />
-      <h3>{lesson.title}</h3>
-      <p>{lesson.description}</p>
-      <ProgressBar value={progress} />
-      {completed && <Badge type="success">Terminé</Badge>}
-      <Button onClick={handleStart}>
-        {progress > 0 ? "Continuer" : "Commencer"}
-      </Button>
-    </Card>
+    <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>
   );
 };
 ```
 
-## Modèle de données
+## Organisation des composants
 
-Les types TypeScript définissent les structures de données utilisées dans l'application :
+Les composants sont organisés selon leur fonction et leur portée dans l'application :
 
-```typescript
-// Types principaux
-export interface User {
-  id: string;
-  username: string;
-  email: string;
-  profilePicture?: string;
-  level: number;
-  xp: number;
-  createdAt: string;
+1. **Composants UI** : Composants de base réutilisables (boutons, inputs, cards)
+2. **Composants fonctionnels** : Composants spécifiques à une fonctionnalité (lessons, dictionnaire)
+3. **Composants de page** : Implémentations de pages complètes
+4. **Composants de mise en page** : Structure globale de l'application (Layout, Navbar, Footer)
+
+### Exemple de structure de routage
+
+```tsx
+// Layout.tsx
+import { Route, Routes, Link, useLocation } from "react-router-dom";
+
+import Footer from "./Footer";
+import Home from "../pages/Home";
+import LogIn from "../pages/LogIn";
+import SignUp from "../pages/SignUp";
+import Navigation from "../components/Navbar";
+import Profile from "../pages/Profile";
+import LessonJourney from "../pages/LessonJourney";
+import LessonDetail from "../pages/LessonDetail";
+import Dictionary from "../pages/Dictionary";
+import DictionaryDetail from "../pages/DictionaryDetail";
+
+function AppLayout() {
+  const location = useLocation();
+  const isAuthPage =
+    location.pathname === "/login" || location.pathname === "/signup";
+
+  if (isAuthPage) {
+    return (
+      <Routes>
+        <Route path="/login" element={<LogIn />} />
+        <Route path="/signup" element={<SignUp />} />
+      </Routes>
+    );
+  }
+  return (
+    <div className="app-container">
+      <Navigation />
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/lessons" element={<LessonJourney />} />
+          <Route path="/lessons/:lessonId" element={<LessonDetail />} />
+          <Route path="/dictionary" element={<Dictionary />} />
+          <Route path="/dictionary/:signId" element={<DictionaryDetail />} />
+          <Route
+            path="*"
+            element={
+              <div className="container-card">
+                <h1 className="text-2xl font-bold mb-4 text-[var(--color-blue)]">
+                  404 Not Found
+                </h1>
+                <p className="mb-6">
+                  The page you're looking for doesn't exist.
+                </p>
+                <Link to="/" className="button-primary inline-block">
+                  Go Home
+                </Link>
+              </div>
+            }
+          />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
 }
 
-export interface Lesson {
-  id: string;
-  title: string;
-  description: string;
-  difficulty: "beginner" | "intermediate" | "advanced";
-  category: string;
-  duration: number; // en minutes
-  exercises: Exercise[];
-}
-
-export interface Exercise {
-  id: string;
-  type: "video" | "quiz" | "practice";
-  content: any;
-  points: number;
-}
-
-export interface UserProgress {
-  userId: string;
-  lessonsCompleted: string[];
-  exercisesCompleted: string[];
-  badges: Badge[];
-  dailyStreak: number;
-  lastActivity: string;
-}
+export default AppLayout;
 ```
 
-## Stratégie de test
+## Système d'internationalisation (i18n)
 
-Les tests frontend sont organisés en plusieurs niveaux :
-
-1. **Tests unitaires** : Tester les composants et hooks individuellement
-2. **Tests d'intégration** : Tester les interactions entre composants
-3. **Tests E2E** : Tester les flux utilisateur complets avec Playwright
-
-### Exemple de test de composant
+L'application utilise i18next pour gérer l'internationalisation :
 
 ```typescript
-import { render, screen, fireEvent } from "@testing-library/react";
-import { Provider } from "react-redux";
-import { store } from "@redux/store";
-import { LessonCard } from "./LessonCard";
+// i18n.ts
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
+import enTranslation from "./locales/en";
+import frTranslation from "./locales/fr";
 
-const mockLesson = {
-  id: "1",
-  title: "Introduction à la LSF",
-  description: "Apprenez les bases de la langue des signes française",
-  difficulty: "beginner",
-  category: "basics",
-  duration: 15,
-  exercises: [],
-};
-
-describe("LessonCard Component", () => {
-  test("renders lesson information correctly", () => {
-    render(
-      <Provider store={store}>
-        <LessonCard lesson={mockLesson} completed={false} progress={0} />
-      </Provider>
-    );
-
-    expect(screen.getByText(mockLesson.title)).toBeInTheDocument();
-    expect(screen.getByText(mockLesson.description)).toBeInTheDocument();
-    expect(screen.getByText("Commencer")).toBeInTheDocument();
+i18n
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources: {
+      en: {
+        translation: enTranslation,
+      },
+      fr: {
+        translation: frTranslation,
+      },
+    },
+    fallbackLng: "en",
+    interpolation: {
+      escapeValue: false, // not needed for react as it escapes by default
+    },
+    detection: {
+      order: ["localStorage", "navigator"],
+      caches: ["localStorage"],
+    },
   });
 
-  test('shows "Continuer" when lesson has progress', () => {
-    render(
-      <Provider store={store}>
-        <LessonCard lesson={mockLesson} completed={false} progress={50} />
-      </Provider>
-    );
+export default i18n;
+```
 
-    expect(screen.getByText("Continuer")).toBeInTheDocument();
-  });
+## Services API
+
+Les services API sont organisés par domaine fonctionnel et utilisent Axios pour les requêtes HTTP :
+
+```typescript
+// apiClient.ts (extrait)
+import axios from "axios";
+import { API_URL } from "../constants/routes";
+import { isTokenExpired } from "../utils/tokenUtils";
+
+// Create axios instance
+const apiClient = axios.create({
+  baseURL: API_URL,
+  timeout: 10000,
 });
+
+// Add token to request headers
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+// Handle token refresh on 401 errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    // Implement token refresh logic
+    // ...
+  }
+);
+
+export default apiClient;
+```
+
+```
+
 ```

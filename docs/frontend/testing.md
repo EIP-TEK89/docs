@@ -1,86 +1,198 @@
 ---
-sidebar_position: 5
+sidebar_position: 4
 ---
 
-# Tests avec Playwright
+# Tests Frontend
 
 ## Introduction
 
-TrioSigno utilise [Playwright](https://playwright.dev/) pour les tests end-to-end (E2E) du frontend. Cette approche permet de vérifier le comportement de l'application du point de vue de l'utilisateur, en simulant des interactions réelles avec l'interface.
+Les tests dans le frontend de TrioSigno sont organisés pour assurer la qualité et la stabilité de l'application. Les tests unitaires et d'intégration sont exécutés via Vitest et React Testing Library.
 
-## Configuration
+## Configuration des tests
 
-### Installation
+### Outils de test
 
-Playwright est configuré dans le projet frontend. Voici comment l'installer :
+- **Vitest** : Remplace Jest comme framework de test, optimisé pour Vite
+- **React Testing Library** : Pour tester les composants React
+- **Mock Service Worker (MSW)** : Pour simuler les appels API
 
-```bash
-cd frontend
-npm install -D @playwright/test
-npx playwright install
+### Configuration
+
+Le projet est configuré pour exécuter les tests avec Vitest :
+
+```json
+{
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  }
+}
 ```
 
-### Structure des tests
+## Structure des tests
 
-Les tests Playwright sont organisés dans le dossier `frontend/tests/e2e` avec la structure suivante :
+Les tests sont organisés dans le dossier `__tests__` à côté des fichiers qu'ils testent :
 
 ```
-frontend/tests/e2e/
-├── auth/
-│   ├── login.spec.ts
-│   └── signup.spec.ts
-├── lessons/
-│   ├── lesson-navigation.spec.ts
-│   └── lesson-completion.spec.ts
-├── profile/
-│   └── user-profile.spec.ts
-├── fixtures/
-│   ├── auth.fixtures.ts
-│   └── lesson.fixtures.ts
-└── utils/
-    ├── test-helpers.ts
-    └── api-mocks.ts
+src/
+  components/
+    Button.tsx
+    __tests__/
+      Button.test.tsx
+  hooks/
+    useAuth.ts
+    __tests__/
+      useAuth.test.ts
 ```
 
-## Exemples de tests
+## Types de tests
 
-### Test d'authentification
+### 1. Tests unitaires
 
-```typescript
-// auth/login.spec.ts
-import { test, expect } from "@playwright/test";
+Les tests unitaires vérifient le comportement isolé des composants, hooks et fonctions utilitaires :
 
-test.describe("Login functionality", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/login");
+```tsx
+// Button.test.tsx
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import Button from "../Button";
+
+describe("Button component", () => {
+  it("renders correctly", () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText("Click me")).toBeInTheDocument();
   });
 
-  test("should display error with invalid credentials", async ({ page }) => {
-    await page.fill('[data-testid="email-input"]', "invalid@example.com");
-    await page.fill('[data-testid="password-input"]', "wrongpassword");
-    await page.click('[data-testid="login-button"]');
+  it("handles click events", () => {
+    const handleClick = vi.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
 
-    const errorMessage = await page.locator('[data-testid="login-error"]');
-    await expect(errorMessage).toBeVisible();
-    await expect(errorMessage).toContainText("Identifiants invalides");
+    fireEvent.click(screen.getByText("Click me"));
+    expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
-  test("should redirect to dashboard after successful login", async ({
-    page,
-  }) => {
-    await page.fill('[data-testid="email-input"]', "user@example.com");
-    await page.fill('[data-testid="password-input"]', "password123");
-    await page.click('[data-testid="login-button"]');
-
-    // Check redirection to dashboard
-    await expect(page).toHaveURL(/.*dashboard/);
-
-    // Verify user info is displayed
-    const userGreeting = await page.locator('[data-testid="user-greeting"]');
-    await expect(userGreeting).toBeVisible();
+  it("applies custom className", () => {
+    render(<Button className="custom-class">Click me</Button>);
+    expect(screen.getByText("Click me")).toHaveClass("custom-class");
   });
 });
 ```
+
+### 2. Tests d'intégration
+
+Les tests d'intégration vérifient les interactions entre plusieurs composants ou avec le Context API :
+
+```tsx
+// AuthContext.test.tsx
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { AuthProvider } from "../../store/auth";
+import { LoginForm } from "../LoginForm";
+import { mockLoginApi } from "../../../mocks/authMocks";
+
+vi.mock("../../services/apiClient", () => ({
+  default: {
+    post: vi.fn().mockImplementation(mockLoginApi),
+  },
+}));
+
+describe("Authentication flow", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it("allows user to login successfully", async () => {
+    render(
+      <AuthProvider>
+        <LoginForm />
+      </AuthProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: "user@example.com" },
+    });
+
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /se connecter/i }));
+
+    await waitFor(() => {
+      expect(localStorage.getItem("token")).toBeTruthy();
+    });
+  });
+});
+```
+
+## Mocking
+
+### Mocking des API
+
+Pour simuler les appels API dans les tests, nous utilisons MSW (Mock Service Worker) :
+
+```typescript
+// mocks/handlers.ts
+import { rest } from "msw";
+import { API_URL } from "../constants/routes";
+
+export const handlers = [
+  rest.post(`${API_URL}/auth/login`, (req, res, ctx) => {
+    const { email, password } = req.body as any;
+
+    if (email === "user@example.com" && password === "password123") {
+      return res(
+        ctx.status(200),
+        ctx.json({
+          token: "fake-jwt-token",
+          user: {
+            id: "1",
+            email: "user@example.com",
+            username: "testuser",
+          },
+        })
+      );
+    }
+
+    return res(ctx.status(401), ctx.json({ message: "Invalid credentials" }));
+  }),
+
+  // Autres handlers...
+];
+```
+
+## Bonnes pratiques
+
+1. **Tests axés sur le comportement** : Tester ce que l'utilisateur voit et peut faire, pas l'implémentation
+2. **Éviter les tests fragiles** : Utiliser des sélecteurs robustes comme les textes et les rôles ARIA
+3. **Isolation** : Chaque test doit être indépendant et ne pas dépendre d'autres tests
+4. **Mock judicieux** : Ne mocker que ce qui est nécessaire pour isoler le comportement testé
+5. **Tests de régression** : Ajouter des tests pour les bugs corrigés pour éviter les régressions
+
+## Exécution des tests en CI/CD
+
+Les tests sont automatiquement exécutés dans le pipeline CI/CD lors des pull requests et des déploiements :
+
+```yaml
+# Extrait du workflow CI
+test:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v3
+    - uses: pnpm/action-setup@v2
+      with:
+        version: 10.11.0
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 20
+        cache: "pnpm"
+    - run: pnpm install
+    - run: pnpm test
+```
+
+````
 
 ### Test de leçon
 
@@ -129,7 +241,7 @@ test.describe("Lesson completion flow", () => {
     await expect(completedLesson).toBeVisible();
   });
 });
-```
+````
 
 ## Tests de la reconnaissance gestuelle
 

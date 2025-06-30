@@ -10,74 +10,86 @@ Le frontend de TrioSigno est développé avec React et TypeScript, offrant une i
 
 ## Technologies principales
 
-- **React**: Bibliothèque JavaScript pour la construction d'interfaces utilisateur
-- **TypeScript**: Superset de JavaScript avec typage statique
-- **React Router**: Pour la navigation entre les différentes pages
-- **Redux Toolkit**: Pour la gestion de l'état global de l'application
+- **React 19**: Bibliothèque JavaScript pour la construction d'interfaces utilisateur
+- **TypeScript 5.8**: Superset de JavaScript avec typage statique
+- **React Router 7**: Pour la navigation entre les différentes pages
+- **Context API**: Pour la gestion de l'état global de l'application
 - **Axios**: Pour les requêtes HTTP vers le backend
-- **Styled Components**: Pour le styling des composants
-- **Playwright**: Pour les tests end-to-end
+- **Tailwind CSS 4**: Pour le styling des composants
+- **i18next**: Pour l'internationalisation de l'application
+- **Vite 6**: Pour le bundling et le développement
 
 ## Architecture
 
 L'architecture du frontend de TrioSigno suit les principes des bonnes pratiques React modernes, avec une séparation claire des responsabilités :
 
 ```
-frontend/
+refacto-front-trio/
 ├── public/          # Ressources statiques
 ├── src/
-│   ├── api/         # Services d'API et intercepteurs
 │   ├── assets/      # Images, icônes et autres ressources
 │   ├── components/  # Composants React réutilisables
-│   ├── context/     # Contextes React
+│   │   ├── ui/      # Composants d'interface utilisateur génériques
+│   │   ├── lessons/ # Composants spécifiques aux leçons
+│   │   └── ...      # Autres composants organisés par fonctionnalité
+│   ├── constants/   # Constantes et configurations
 │   ├── features/    # Fonctionnalités organisées par domaine
 │   ├── hooks/       # Hooks personnalisés
-│   ├── layouts/     # Layouts de l'application
+│   ├── i18n/        # Internationalisation
+│   │   ├── locales/ # Traductions par langue
+│   │   └── i18n.ts  # Configuration i18n
 │   ├── pages/       # Composants de page
-│   ├── redux/       # Store, reducers et actions Redux
+│   ├── services/    # Services d'API et intercepteurs
+│   ├── store/       # Gestion de l'état avec Context API
 │   ├── types/       # Définitions de types TypeScript
 │   ├── utils/       # Fonctions utilitaires
 │   ├── App.tsx      # Composant racine
-│   └── index.tsx    # Point d'entrée
-└── tests/           # Tests d'intégration et E2E
+│   └── main.tsx     # Point d'entrée
+└── docs/            # Documentation spécifique au frontend
 ```
 
 ## Fonctionnalités principales
 
 ### Système d'authentification
 
-Le système d'authentification utilise JWT (JSON Web Tokens) pour sécuriser les sessions utilisateurs, avec gestion des tokens de rafraîchissement.
+Le système d'authentification utilise JWT (JSON Web Tokens) pour sécuriser les sessions utilisateurs, avec gestion des tokens de rafraîchissement via le Context API.
 
-### Détection des gestes
+### Apprentissage des signes
 
-Le frontend intègre la caméra web pour capturer les gestes de l'utilisateur, qui sont ensuite envoyés à l'API d'IA pour analyse.
+L'application propose différentes leçons pour apprendre la langue des signes, avec :
 
-### Système de gamification
+- Des parcours d'apprentissage progressifs
+- Un dictionnaire de signes
+- Des exercices interactifs
 
-L'interface implémente des éléments de jeu comme :
+### Internationalisation
 
-- Points d'expérience
-- Niveaux
-- Badges
-- Défis quotidiens
-- Tableaux de classement
+L'application est entièrement internationalisée grâce à i18next et prend en charge :
 
-### Mode hors ligne
+- Français (langue par défaut)
+- Anglais
+- Détection automatique de la langue du navigateur
+- Changement de langue via une interface utilisateur dédiée
 
-L'application peut fonctionner en mode hors ligne grâce à l'utilisation de Service Workers et d'une stratégie de mise en cache.
+### Profil utilisateur
+
+Les utilisateurs peuvent :
+
+- Consulter leur progression
+- Modifier leurs informations personnelles
+- Changer leurs préférences de langue
+- Gérer leur mot de passe
 
 ## Communication avec le backend
 
-La communication avec le backend se fait via des appels API REST utilisant Axios. Les requêtes sont organisées dans des services dédiés par domaine fonctionnel.
+La communication avec le backend se fait via des appels API REST utilisant Axios. Les requêtes sont organisées dans des services dédiés par domaine fonctionnel, avec gestion des erreurs et refresh token automatique.
 
-## Tests
+## Build et déploiement
 
-Le frontend est testé à plusieurs niveaux :
+Le frontend est construit avec Vite, qui offre :
 
-- Tests unitaires avec Jest et React Testing Library
-- Tests d'intégration pour les flux importants
-- Tests end-to-end avec Playwright qui simulent les interactions utilisateur complètes
+- Des temps de compilation rapides
+- Un serveur de développement avec Hot Module Replacement
+- Une optimisation des assets pour la production
 
-## Stratégie de déploiement
-
-Le frontend est déployé via Docker dans un conteneur nginx optimisé pour servir des applications React statiques.
+L'application est déployée via Docker dans un conteneur nginx optimisé pour servir des applications React statiques.

@@ -24,7 +24,7 @@ Le frontend de TrioSigno est développé avec React et TypeScript, offrant une i
 L'architecture du frontend de TrioSigno suit les principes des bonnes pratiques React modernes, avec une séparation claire des responsabilités :
 
 ```
-refacto-front-trio/
+trio-signo-front/
 ├── public/          # Ressources statiques
 ├── src/
 │   ├── assets/      # Images, icônes et autres ressources

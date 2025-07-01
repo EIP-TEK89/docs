@@ -70,7 +70,7 @@ const sidebars: SidebarsConfig = {
         type: "doc",
         id: "ia/overview",
       },
-      items: ["ia/overview"],
+      items: ["ia/overview", "ia/endpoints", "ia/triosignolib"],
     },
     {
       type: "category",

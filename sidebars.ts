@@ -37,6 +37,7 @@ const sidebars: SidebarsConfig = {
         "faq/frontend",
         "faq/backend",
         "faq/ai",
+        "faq/mobile",
         "faq/troubleshooting",
       ],
     },
@@ -53,6 +54,15 @@ const sidebars: SidebarsConfig = {
         "frontend/internationalization",
         "frontend/testing",
       ],
+    },
+    {
+      type: "category",
+      label: "Mobile",
+      link: {
+        type: "doc",
+        id: "mobile/overview",
+      },
+      items: ["mobile/overview"],
     },
     {
       type: "category",

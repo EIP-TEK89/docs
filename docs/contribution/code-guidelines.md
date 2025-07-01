@@ -32,6 +32,15 @@ triosigno/
 │   ├── styles/           # Styles globaux et thèmes
 │   └── utils/            # Utilitaires frontend
 │
+├── mobile/               # Mobile React/Next.js
+│   ├── components/       # Composants UI réutilisables
+│   ├── app/              # Pages de l'application
+│   ├── services/         # Services for API calls and business logic
+│   ├── constants/        # Constant values used in the application
+│   ├── types/            # TypeScript type definitions
+│   ├── styles/           # Styles globaux et thèmes
+│   └── utils/            # Utilitaires mobile
+│
 ├── server/               # Backend Node.js/Express
 │   ├── api/              # Routes et contrôleurs API
 │   ├── config/           # Configuration du serveur

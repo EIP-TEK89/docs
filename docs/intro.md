@@ -17,6 +17,7 @@ TrioSigno est une application fullstack permettant d'apprendre la langue des sig
 
 <div className="tech-container">
   <span className="tech-badge">React</span>
+  <span className="tech-badge">React Native</span>
   <span className="tech-badge">TypeScript</span>
   <span className="tech-badge">NestJS</span>
   <span className="tech-badge">Prisma</span>
@@ -34,9 +35,11 @@ TrioSigno est composé de trois parties principales :
 
 1. **Frontend** : Une application React avec TypeScript, offrant une interface utilisateur intuitive et réactive.
 
-2. **Backend** : Une API RESTful construite avec NestJS et TypeScript, utilisant Prisma comme ORM pour interagir avec la base de données PostgreSQL.
+2. **Mobile** : Une application React Native avec TypeScript, offrant une interface utilisateur intuitive et réactive.
 
-3. **IA** : Un modèle d'intelligence artificielle développé en Python, basé sur un modèle de Google spécialisé dans la reconnaissance des mains, et affiné par notre équipe pour reconnaître les gestes spécifiques de la LSF.
+3. **Backend** : Une API RESTful construite avec NestJS et TypeScript, utilisant Prisma comme ORM pour interagir avec la base de données PostgreSQL.
+
+4. **IA** : Un modèle d'intelligence artificielle développé en Python, basé sur un modèle de Google spécialisé dans la reconnaissance des mains, et affiné par notre équipe pour reconnaître les gestes spécifiques de la LSF.
 
 ## Démarrage rapide
 

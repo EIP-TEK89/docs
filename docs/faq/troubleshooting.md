@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
 title: FAQ Dépannage
 description: Solutions aux problèmes courants rencontrés lors de l'utilisation de TrioSigno.
 ---

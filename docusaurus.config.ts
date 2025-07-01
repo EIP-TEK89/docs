@@ -118,6 +118,10 @@ const config: Config = {
               to: "/docs/frontend/overview",
             },
             {
+              label: "Mobile",
+              to: "/docs/Mobile/overview",
+            },
+            {
               label: "Backend",
               to: "/docs/backend/overview",
             },

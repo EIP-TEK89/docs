@@ -66,6 +66,15 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
+      label: "Mobile",
+      link: {
+        type: "doc",
+        id: "mobile/overview",
+      },
+      items: ["mobile/overview"],
+    },
+    {
+      type: "category",
       label: "Backend",
       link: {
         type: "doc",
